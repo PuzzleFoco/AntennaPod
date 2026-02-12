@@ -117,6 +117,11 @@ Sync settings are shared with the Android app through `UserPreferences`:
 
 The app automatically detects if the companion app is available and switches between modes accordingly.
 
+## Documentation
+
+- **[Setup Guide](SETUP.md)**: Detailed instructions for installing and configuring the Wear OS app
+- **[Integration Guide](INTEGRATION.md)**: Technical details on how the Wear app integrates with the Android app
+
 ## Building
 
 ### Prerequisites
