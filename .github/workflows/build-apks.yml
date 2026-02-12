@@ -1,0 +1,163 @@
+name: Build and Release APKs
+
+on:
+  push:
+    branches: [ master, develop ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ master, develop ]
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+jobs:
+  build-apks:
+    name: "Build APKs"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*') }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-
+
+      - name: Configure parallel build
+        run: echo "org.gradle.parallel=true" >> local.properties
+
+      - name: Create temporary release keystore
+        run: |
+          keytool -noprompt -genkey -v -keystore "app/keystore" -alias alias -storepass password -keypass password -keyalg RSA -validity 10 -dname "CN=antennapod.org, OU=dummy, O=dummy, L=dummy, S=dummy, C=US"
+
+      - name: Build Main App APKs
+        run: |
+          ./gradlew :app:assemblePlayDebug :app:assemblePlayRelease :app:assembleFreeRelease
+
+      - name: Build Wear OS APK
+        run: |
+          ./gradlew :wear:assembleDebug :wear:assembleRelease
+
+      - name: Rename APK files
+        run: |
+          mkdir -p apk-output
+          # Main app APKs
+          cp app/build/outputs/apk/play/debug/app-play-debug.apk apk-output/AntennaPod-play-debug.apk || true
+          cp app/build/outputs/apk/play/release/app-play-release-unsigned.apk apk-output/AntennaPod-play-release.apk || true
+          cp app/build/outputs/apk/free/release/app-free-release-unsigned.apk apk-output/AntennaPod-free-release.apk || true
+          # Wear OS APKs
+          cp wear/build/outputs/apk/debug/wear-debug.apk apk-output/AntennaPod-wear-debug.apk || true
+          cp wear/build/outputs/apk/release/wear-release-unsigned.apk apk-output/AntennaPod-wear-release.apk || true
+
+      - name: Upload Main App Play Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntennaPod-play-debug
+          path: apk-output/AntennaPod-play-debug.apk
+          if-no-files-found: warn
+
+      - name: Upload Main App Play Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntennaPod-play-release
+          path: apk-output/AntennaPod-play-release.apk
+          if-no-files-found: warn
+
+      - name: Upload Main App Free Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntennaPod-free-release
+          path: apk-output/AntennaPod-free-release.apk
+          if-no-files-found: warn
+
+      - name: Upload Wear OS Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntennaPod-wear-debug
+          path: apk-output/AntennaPod-wear-debug.apk
+          if-no-files-found: warn
+
+      - name: Upload Wear OS Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntennaPod-wear-release
+          path: apk-output/AntennaPod-wear-release.apk
+          if-no-files-found: warn
+
+      - name: Create Build Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Built APKs:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "apk-output/AntennaPod-play-debug.apk" ]; then
+            SIZE=$(du -h apk-output/AntennaPod-play-debug.apk | cut -f1)
+            echo "- ✅ **AntennaPod Play Debug** ($SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "apk-output/AntennaPod-play-release.apk" ]; then
+            SIZE=$(du -h apk-output/AntennaPod-play-release.apk | cut -f1)
+            echo "- ✅ **AntennaPod Play Release** ($SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "apk-output/AntennaPod-free-release.apk" ]; then
+            SIZE=$(du -h apk-output/AntennaPod-free-release.apk | cut -f1)
+            echo "- ✅ **AntennaPod Free Release** ($SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "apk-output/AntennaPod-wear-debug.apk" ]; then
+            SIZE=$(du -h apk-output/AntennaPod-wear-debug.apk | cut -f1)
+            echo "- ✅ **AntennaPod Wear OS Debug** ($SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f "apk-output/AntennaPod-wear-release.apk" ]; then
+            SIZE=$(du -h apk-output/AntennaPod-wear-release.apk | cut -f1)
+            echo "- ✅ **AntennaPod Wear OS Release** ($SIZE)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All APKs are available as workflow artifacts for download." >> $GITHUB_STEP_SUMMARY
+
+  create-release:
+    name: "Create GitHub Release"
+    needs: build-apks
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-apks
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-apks/*/*.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
