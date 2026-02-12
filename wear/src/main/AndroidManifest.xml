@@ -3,9 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Wear OS permissions -->
-    <uses-feature android:name="android.hardware.type.watch" />
-    
-    <!-- Declare as standalone Wear OS app -->
     <uses-feature android:name="android.hardware.type.watch" android:required="false" />
     
     <!-- Permissions -->

@@ -10,7 +10,7 @@ Wear OS companion and standalone app for AntennaPod podcast player.
 - **Companion Mode**: Integrates with the Android app when available
 - **Media Playback**: MediaBrowser service for podcast playback
 - **Sync Support**: Synchronizes listening history with gpodder.net or Nextcloud GPodder
-- **Wear Compose UI**: Modern UI built with Jetpack Compose for Wear OS
+- **Traditional UI**: Built with Android Views and XML layouts for compatibility
 
 ### Supported Screens
 
@@ -42,9 +42,10 @@ The Wear OS app follows AntennaPod's modular architecture:
 
 - **Wear OS Specific**:
   - `androidx.wear:wear` - Wear OS platform support
-  - `androidx.wear.compose:compose-material` - Wear Compose UI
   - `androidx.media3:media3-session` - Media playback
   - `androidx.work:work-runtime` - Background sync
+  - `androidx.constraintlayout` - UI layouts
+  - `androidx.recyclerview` - List views
 
 ### Key Components
 
@@ -55,12 +56,10 @@ Main application class that initializes:
 - WorkManager for background sync
 
 #### 2. MainActivity
-Main UI activity using Jetpack Compose for Wear OS. Provides navigation between:
-- Home screen
-- Now Playing screen
-- Library screen
-- Sync screen
-- Settings screen
+Main UI activity using traditional Android Views and XML layouts. Provides navigation between:
+- Home screen with playback controls
+- Sync management
+- Settings access (coming in future updates)
 
 #### 3. WearPlaybackService
 MediaBrowserServiceCompat implementation that:
@@ -167,10 +166,10 @@ The app automatically detects if the companion app is available and switches bet
 
 ## Known Limitations
 
-1. **Compose for Wear OS**: Some advanced UI features may require newer Wear OS versions
-2. **Battery Impact**: Standalone mode with direct playback consumes more battery
-3. **Storage**: Limited storage on Wear OS devices may restrict downloaded episodes
-4. **Network**: Standalone mode requires Wi-Fi or LTE connection
+1. **Battery Impact**: Standalone mode with direct playback consumes more battery
+2. **Storage**: Limited storage on Wear OS devices may restrict downloaded episodes
+3. **Network**: Standalone mode requires Wi-Fi or LTE connection
+4. **UI Features**: Some advanced features may require newer Wear OS versions
 
 ## Future Enhancements
 

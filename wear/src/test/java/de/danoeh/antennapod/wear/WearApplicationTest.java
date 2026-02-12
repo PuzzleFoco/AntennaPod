@@ -35,36 +35,24 @@ public class WearApplicationTest {
     @Test
     public void testSyncManagerSchedule() {
         // Test that sync manager can schedule sync without crashing
-        try {
-            SyncManager.schedulePeriodicSync(context);
-            // If we get here, scheduling worked
-            assertTrue(true);
-        } catch (Exception e) {
-            fail("Sync scheduling should not throw exception: " + e.getMessage());
-        }
+        SyncManager.schedulePeriodicSync(context);
+        // Verify scheduling completed successfully
+        // Note: In a real test, we would verify WorkManager has the scheduled work
     }
 
     @Test
     public void testSyncManagerCancelSync() {
         // Test that sync manager can cancel sync without crashing
-        try {
-            SyncManager.cancelAllSync(context);
-            // If we get here, cancellation worked
-            assertTrue(true);
-        } catch (Exception e) {
-            fail("Sync cancellation should not throw exception: " + e.getMessage());
-        }
+        SyncManager.cancelAllSync(context);
+        // Verify cancellation completed successfully
+        // Note: In a real test, we would verify WorkManager has no scheduled work
     }
 
     @Test
     public void testSyncManagerTriggerSync() {
         // Test that sync manager can trigger immediate sync without crashing
-        try {
-            SyncManager.triggerImmediateSync(context);
-            // If we get here, triggering worked
-            assertTrue(true);
-        } catch (Exception e) {
-            fail("Sync trigger should not throw exception: " + e.getMessage());
-        }
+        SyncManager.triggerImmediateSync(context);
+        // Verify trigger completed successfully
+        // Note: In a real test, we would verify WorkManager has the one-time work enqueued
     }
 }

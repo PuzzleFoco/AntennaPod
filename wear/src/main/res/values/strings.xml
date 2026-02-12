@@ -15,6 +15,7 @@
     <string name="skip_back">Skip Back</string>
     <string name="fast_forward">Fast Forward</string>
     <string name="rewind">Rewind</string>
+    <string name="sync_now">Sync Now</string>
     
     <!-- Sync -->
     <string name="sync_enabled">Sync Enabled</string>
