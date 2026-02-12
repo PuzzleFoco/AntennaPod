@@ -2,291 +2,187 @@ package de.danoeh.antennapod.wear.ui;
 
 import android.content.ComponentName;
 import android.os.Bundle;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 
-import androidx.activity.ComponentActivity;
-import androidx.activity.compose.setContent;
-import androidx.compose.foundation.background;
-import androidx.compose.foundation.layout.Arrangement;
-import androidx.compose.foundation.layout.Box;
-import androidx.compose.foundation.layout.Column;
-import androidx.compose.foundation.layout.fillMaxSize;
-import androidx.compose.foundation.layout.fillMaxWidth;
-import androidx.compose.foundation.layout.padding;
-import androidx.compose.foundation.layout.size;
-import androidx.compose.runtime.Composable;
-import androidx.compose.runtime.mutableStateOf;
-import androidx.compose.runtime.remember;
-import androidx.compose.ui.Alignment;
-import androidx.compose.ui.Modifier;
-import androidx.compose.ui.graphics.Color;
-import androidx.compose.ui.text.style.TextAlign;
-import androidx.compose.ui.unit.dp;
-import androidx.wear.compose.material.Button;
-import androidx.wear.compose.material.ButtonDefaults;
-import androidx.wear.compose.material.Chip;
-import androidx.wear.compose.material.ChipDefaults;
-import androidx.wear.compose.material.MaterialTheme;
-import androidx.wear.compose.material.Text;
-import androidx.wear.compose.material.TimeText;
-import androidx.wear.compose.navigation.SwipeDismissableNavHost;
-import androidx.wear.compose.navigation.composable;
-import androidx.wear.compose.navigation.rememberSwipeDismissableNavController;
+import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
+import androidx.wear.ambient.AmbientModeSupport;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import de.danoeh.antennapod.event.SyncServiceEvent;
 import de.danoeh.antennapod.wear.R;
+import de.danoeh.antennapod.wear.playback.WearPlaybackService;
+import de.danoeh.antennapod.wear.sync.SyncManager;
 
 /**
  * Main activity for AntennaPod Wear OS app.
- * Provides navigation between different screens using Wear Compose navigation.
+ * Provides a simple interface for playback control and sync management.
  */
-public class MainActivity extends ComponentActivity {
+public class MainActivity extends FragmentActivity implements 
+        AmbientModeSupport.AmbientCallbackProvider {
+
+    private TextView statusText;
+    private Button playPauseButton;
+    private Button syncButton;
+    private TextView syncStatusText;
+    
+    private MediaBrowserCompat mediaBrowser;
+    private MediaControllerCompat mediaController;
+    private AmbientModeSupport.AmbientController ambientController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
         
-        setContent(() -> {
-            MaterialTheme theme = new MaterialTheme();
-            return theme.content(this::WearApp);
-        });
+        // Enable ambient mode support
+        ambientController = AmbientModeSupport.attach(this);
+        
+        // Initialize views
+        statusText = findViewById(R.id.status_text);
+        playPauseButton = findViewById(R.id.play_pause_button);
+        syncButton = findViewById(R.id.sync_button);
+        syncStatusText = findViewById(R.id.sync_status_text);
+        
+        // Set up button listeners
+        playPauseButton.setOnClickListener(v -> togglePlayback());
+        syncButton.setOnClickListener(v -> triggerSync());
+        
+        // Initialize media browser
+        mediaBrowser = new MediaBrowserCompat(
+            this,
+            new ComponentName(this, WearPlaybackService.class),
+            connectionCallback,
+            null
+        );
     }
 
-    @Composable
-    private void WearApp() {
-        var navController = rememberSwipeDismissableNavController();
+    @Override
+    protected void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+        mediaBrowser.connect();
+    }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        ) {
-            TimeText();
+    @Override
+    protected void onStop() {
+        super.onStop();
+        EventBus.getDefault().unregister(this);
+        if (mediaController != null) {
+            mediaController.unregisterCallback(controllerCallback);
+        }
+        mediaBrowser.disconnect();
+    }
 
-            SwipeDismissableNavHost(
-                navController = navController,
-                startDestination = "home"
-            ) {
-                composable("home") {
-                    HomeScreen(
-                        onNowPlayingClick = () -> navController.navigate("nowplaying"),
-                        onLibraryClick = () -> navController.navigate("library"),
-                        onSyncClick = () -> navController.navigate("sync"),
-                        onSettingsClick = () -> navController.navigate("settings")
-                    );
-                }
+    @Override
+    public AmbientModeSupport.AmbientCallback getAmbientCallback() {
+        return new AmbientModeSupport.AmbientCallback() {
+            @Override
+            public void onEnterAmbient(Bundle ambientDetails) {
+                // Update UI for ambient mode
+                statusText.getPaint().setAntiAlias(false);
+            }
 
-                composable("nowplaying") {
-                    NowPlayingScreen();
-                }
+            @Override
+            public void onExitAmbient() {
+                // Update UI for interactive mode
+                statusText.getPaint().setAntiAlias(true);
+            }
+        };
+    }
 
-                composable("library") {
-                    LibraryScreen();
-                }
+    private final MediaBrowserCompat.ConnectionCallback connectionCallback =
+            new MediaBrowserCompat.ConnectionCallback() {
+        @Override
+        public void onConnected() {
+            try {
+                mediaController = new MediaControllerCompat(
+                    MainActivity.this,
+                    mediaBrowser.getSessionToken()
+                );
+                MediaControllerCompat.setMediaController(MainActivity.this, mediaController);
+                mediaController.registerCallback(controllerCallback);
+                
+                // Update UI based on current playback state
+                updatePlaybackUI();
+                statusText.setText(R.string.connected);
+            } catch (Exception e) {
+                statusText.setText(R.string.error_occurred);
+            }
+        }
 
-                composable("sync") {
-                    SyncScreen();
-                }
+        @Override
+        public void onConnectionFailed() {
+            statusText.setText(R.string.no_connection);
+        }
+    };
 
-                composable("settings") {
-                    SettingsScreen();
-                }
+    private final MediaControllerCompat.Callback controllerCallback =
+            new MediaControllerCompat.Callback() {
+        @Override
+        public void onPlaybackStateChanged(PlaybackStateCompat state) {
+            updatePlaybackUI();
+        }
+    };
+
+    private void togglePlayback() {
+        if (mediaController == null) {
+            return;
+        }
+
+        PlaybackStateCompat state = mediaController.getPlaybackState();
+        if (state != null) {
+            if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                mediaController.getTransportControls().pause();
+            } else {
+                mediaController.getTransportControls().play();
             }
         }
     }
 
-    @Composable
-    private void HomeScreen(
-        Runnable onNowPlayingClick,
-        Runnable onLibraryClick,
-        Runnable onSyncClick,
-        Runnable onSettingsClick
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = getString(R.string.app_name),
-                style = MaterialTheme.typography.title2,
-                textAlign = TextAlign.Center
-            );
+    private void updatePlaybackUI() {
+        if (mediaController == null) {
+            playPauseButton.setText(R.string.play);
+            return;
+        }
 
-            Chip(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                label = { Text(getString(R.string.now_playing)); },
-                onClick = onNowPlayingClick,
-                colors = ChipDefaults.primaryChipColors()
-            );
-
-            Chip(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                label = { Text(getString(R.string.library)); },
-                onClick = onLibraryClick,
-                colors = ChipDefaults.secondaryChipColors()
-            );
-
-            Chip(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                label = { Text(getString(R.string.sync)); },
-                onClick = onSyncClick,
-                colors = ChipDefaults.secondaryChipColors()
-            );
-
-            Chip(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                label = { Text(getString(R.string.settings)); },
-                onClick = onSettingsClick,
-                colors = ChipDefaults.secondaryChipColors()
-            );
+        PlaybackStateCompat state = mediaController.getPlaybackState();
+        if (state != null && state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+            playPauseButton.setText(R.string.pause);
+        } else {
+            playPauseButton.setText(R.string.play);
         }
     }
 
-    @Composable
-    private void NowPlayingScreen() {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = getString(R.string.now_playing),
-                style = MaterialTheme.typography.title2,
-                textAlign = TextAlign.Center
-            );
-
-            Text(
-                text = "No episode playing",
-                style = MaterialTheme.typography.body1,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp)
-            );
-
-            Button(
-                modifier = Modifier
-                    .padding(top = 16.dp)
-                    .size(52.dp),
-                onClick = () -> { /* TODO: Play/Pause */ },
-                colors = ButtonDefaults.primaryButtonColors()
-            ) {
-                Text("▶");
-            }
-        }
+    private void triggerSync() {
+        syncStatusText.setText(R.string.syncing);
+        syncButton.setEnabled(false);
+        SyncManager.triggerImmediateSync(this);
     }
 
-    @Composable
-    private void LibraryScreen() {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = getString(R.string.library),
-                style = MaterialTheme.typography.title2,
-                textAlign = TextAlign.Center
-            );
-
-            Text(
-                text = getString(R.string.no_episodes),
-                style = MaterialTheme.typography.body1,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp)
-            );
-        }
-    }
-
-    @Composable
-    private void SyncScreen() {
-        var syncState = remember { mutableStateOf("Not synced") };
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = getString(R.string.sync),
-                style = MaterialTheme.typography.title2,
-                textAlign = TextAlign.Center
-            );
-
-            Text(
-                text = syncState.getValue(),
-                style = MaterialTheme.typography.body1,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp)
-            );
-
-            Button(
-                modifier = Modifier.padding(top = 16.dp),
-                onClick = () -> {
-                    syncState.setValue("Syncing...");
-                    // TODO: Trigger sync
-                },
-                colors = ButtonDefaults.primaryButtonColors()
-            ) {
-                Text("Sync Now");
-            }
-        }
-    }
-
-    @Composable
-    private void SettingsScreen() {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = getString(R.string.settings),
-                style = MaterialTheme.typography.title2,
-                textAlign = TextAlign.Center
-            );
-
-            Chip(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                label = { Text(getString(R.string.sync_settings)); },
-                onClick = () -> { /* TODO: Open sync settings */ },
-                colors = ChipDefaults.secondaryChipColors()
-            );
-
-            Chip(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                label = { Text(getString(R.string.playback_settings)); },
-                onClick = () -> { /* TODO: Open playback settings */ },
-                colors = ChipDefaults.secondaryChipColors()
-            );
-
-            Chip(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                label = { Text(getString(R.string.about)); },
-                onClick = () -> { /* TODO: Open about */ },
-                colors = ChipDefaults.secondaryChipColors()
-            );
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onSyncEvent(SyncServiceEvent event) {
+        switch (event.getMessageType()) {
+            case SYNC_STARTED:
+                syncStatusText.setText(R.string.syncing);
+                syncButton.setEnabled(false);
+                break;
+            case SYNC_COMPLETED:
+                syncStatusText.setText(R.string.sync_complete);
+                syncButton.setEnabled(true);
+                break;
+            case SYNC_FAILED:
+                syncStatusText.setText(R.string.sync_failed);
+                syncButton.setEnabled(true);
+                break;
         }
     }
 }
