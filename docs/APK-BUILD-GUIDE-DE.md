@@ -96,7 +96,7 @@ adb install AntennaPod-wear-debug.apk
 
 ### Android Gradle Plugin (AGP)
 
-- **Version**: 9.0.0 (neueste Version)
+- **Version**: 8.5.2 (stabile Version)
 - **Gradle Version**: 8.13
 - **Java Version**: 21
 
@@ -126,7 +126,7 @@ Für signierte Release-Builds sollten Sie:
 
 1. Prüfe die Build-Logs in GitHub Actions
 2. Stelle sicher, dass alle Dependencies verfügbar sind
-3. Prüfe ob AGP 9.0.0 mit allen Modulen kompatibel ist
+3. Prüfe ob AGP 8.5.2 mit allen Modulen kompatibel ist
 
 ### APK lässt sich nicht installieren
 
