@@ -44,3 +44,9 @@ If you want to translate AntennaPod into another language, you can visit our [We
 
 You can build AntennaPod just like any other Android project. Refer to the [instructions](https://github.com/AntennaPod/AntennaPod/blob/develop/CONTRIBUTING.md) for more details.
 
+### Building APKs with GitHub Actions
+
+The repository includes automated workflows that build installable APK files. See the build guides for more information:
+- [APK Build Guide (English)](docs/APK-BUILD-GUIDE.md)
+- [APK Build Anleitung (Deutsch)](docs/APK-BUILD-GUIDE-DE.md)
+
