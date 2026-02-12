@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AntennaPod Wear</string>
+    
+    <!-- Main UI -->
+    <string name="now_playing">Now Playing</string>
+    <string name="library">Library</string>
+    <string name="sync">Sync</string>
+    <string name="settings">Settings</string>
+    
+    <!-- Playback controls -->
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="skip_forward">Skip Forward</string>
+    <string name="skip_back">Skip Back</string>
+    <string name="fast_forward">Fast Forward</string>
+    <string name="rewind">Rewind</string>
+    
+    <!-- Sync -->
+    <string name="sync_enabled">Sync Enabled</string>
+    <string name="sync_disabled">Sync Disabled</string>
+    <string name="syncing">Syncing…</string>
+    <string name="sync_complete">Sync Complete</string>
+    <string name="sync_failed">Sync Failed</string>
+    <string name="last_sync">Last sync: %1$s</string>
+    
+    <!-- Library -->
+    <string name="no_episodes">No episodes</string>
+    <string name="loading">Loading…</string>
+    
+    <!-- Settings -->
+    <string name="sync_settings">Sync Settings</string>
+    <string name="playback_settings">Playback Settings</string>
+    <string name="about">About</string>
+    
+    <!-- Connection -->
+    <string name="connecting">Connecting…</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="no_connection">No Connection</string>
+    
+    <!-- Errors -->
+    <string name="error_occurred">An error occurred</string>
+    <string name="retry">Retry</string>
+</resources>

@@ -57,3 +57,5 @@ include ':ui:preferences'
 include ':ui:statistics'
 include ':ui:widget'
 include ':ui:transcript'
+
+include ':wear'
