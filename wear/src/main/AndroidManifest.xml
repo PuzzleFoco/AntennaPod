@@ -71,17 +71,7 @@
             android:name="com.google.android.wearable.companionApp"
             android:value="de.danoeh.antennapod" />
 
-        <!-- Disable automatic WorkManager initialization to allow manual init -->
-        <provider
-            android:name="androidx.startup.InitializationProvider"
-            android:authorities="${applicationId}.androidx-startup"
-            android:exported="false"
-            tools:node="merge">
-            <meta-data
-                android:name="androidx.work.WorkManagerInitializer"
-                android:value="androidx.startup"
-                tools:node="remove" />
-        </provider>
+        <!-- WorkManager is automatically initialized by AndroidX (default config) -->
 
     </application>
 

@@ -33,16 +33,8 @@ public class WearApplication extends Application {
         // Initialize UserPreferences
         UserPreferences.init(this);
         
-        // Initialize WorkManager for background sync
-        initializeWorkManager();
-    }
-    
-    private void initializeWorkManager() {
-        Configuration config = new Configuration.Builder()
-                .setMinimumLoggingLevel(android.util.Log.INFO)
-                .build();
-        
-        WorkManager.initialize(this, config);
+        // WorkManager is automatically initialized by AndroidX
+        // No manual initialization needed (uses default configuration)
     }
     
     public static Context getAppContext() {
