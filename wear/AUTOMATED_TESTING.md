@@ -1,28 +1,39 @@
 # Automated Emulator Testing
 
-This document explains the automated emulator testing system that provides continuous verification of the Wear OS app.
+This document explains the automated emulator testing integrated into the Build and Release APKs workflow.
 
 ## Overview
 
-The Wear OS module now has **automated emulator testing** via GitHub Actions. Every push triggers automated tests that verify the app starts correctly on a Wear OS emulator.
+The Wear OS module has **automated emulator testing** integrated into the main build workflow (`.github/workflows/build-apks.yml`). Every build triggers automated tests that verify the app starts correctly on a Wear OS emulator.
 
-## Why Automated Testing?
+## Why Integrated Testing?
 
-### Before: Manual Testing Only
-- ❌ Required manual setup
-- ❌ Slow feedback loop
-- ❌ Easy to miss issues
-- ❌ Not run on every change
+### Single Workflow Benefits
+- ✅ One place to check build AND test status
+- ✅ Tests run in parallel with APK builds
+- ✅ Simpler CI/CD pipeline
+- ✅ Easier to maintain
+- ✅ Clear relationship between builds and tests
 
-### After: Automated Testing
-- ✅ Runs automatically on every push
-- ✅ Fast feedback (results in 10-15 minutes)
-- ✅ Catches issues immediately
-- ✅ No manual intervention needed
+### How It Works
+
+**Build Workflow** has two jobs running in parallel:
+
+```
+Job 1: build-apks        Job 2: test-wear-emulator
+  ├─ Build main app APKs   ├─ Build Wear APK
+  ├─ Build Wear APKs       ├─ Start emulator
+  ├─ Upload artifacts      ├─ Install & test
+  └─ Create release        └─ Report results
+```
+
+Both jobs run **simultaneously** for faster feedback.
 
 ## The Workflow
 
-**File**: `.github/workflows/wear-emulator-test.yml`
+**File**: `.github/workflows/build-apks.yml`
+
+**Job Name**: `test-wear-emulator`
 
 ### What It Tests
 
@@ -138,68 +149,60 @@ Error: Process completed with exit code 1.
 
 ### Automatic Triggers
 
-**1. Push to Feature Branch**
+Tests run as part of the **Build and Release APKs** workflow:
+
+**1. Push to Branches**
 ```bash
-git push origin copilot/add-wear-os-antenna-pod
-# Triggers emulator test automatically
+git push origin master        # Builds all + tests
+git push origin develop       # Builds debug + tests  
+git push origin copilot/...   # Builds debug + tests
 ```
 
-**2. Changes to Wear Module**
-- Any file in `wear/**` directory
-- The workflow file itself
+**2. Version Tags**
+```bash
+git push origin v3.11.1       # Builds release + tests + creates GitHub release
+```
 
-**3. Pull Requests**
-- Tests run on PRs affecting wear module
-- Results visible in PR checks
+**3. Manual Workflow Dispatch**
+- Go to Actions → "Build and Release APKs"
+- Select build variant
+- Tests run automatically
 
-### Manual Trigger
+### Viewing Combined Results
 
-**Via GitHub UI**:
 1. Go to **Actions** tab
-2. Select **"Wear OS Emulator Test"**
-3. Click **"Run workflow"**
-4. Choose branch
-5. Click **"Run workflow"** button
-
-**Via GitHub CLI**:
-```bash
-gh workflow run wear-emulator-test.yml --ref copilot/add-wear-os-antenna-pod
-```
-
-## Viewing Results
-
-### Live Monitoring
-
-1. Go to repository **Actions** tab
-2. Find **"Wear OS Emulator Test"** workflow
-3. Click on running instance
-4. Expand **"Test on Wear OS Emulator"** step
-5. Watch real-time output
+2. Select **"Build and Release APKs"** workflow
+3. Click on a run
+4. See both jobs:
+   - **Build APKs** (left) - APK building status
+   - **Test Wear OS on Emulator** (right) - Test status
 
 ### After Completion
 
-**Success (✅)**:
-- Green checkmark
-- "Emulator test completed successfully!"
-- All checks passed
+**Both Jobs Complete**:
+- Build APKs: ✅ or ❌
+- Test Emulator: ✅ or ❌
 
-**Failure (❌)**:
-- Red X
-- Error message in logs
-- `logcat.txt` uploaded as artifact
+You can:
+- Download APKs even if tests are still running
+- See test results independently
+- Debug test failures with uploaded logs
 
 ## Debugging Failed Tests
 
 ### 1. Check Workflow Logs
 
-Click on failed job → Expand steps → Read error messages
+In workflow run:
+1. Click on **"Test Wear OS on Emulator"** job
+2. Expand **"Test on Wear OS Emulator"** step
+3. Read error messages
 
 ### 2. Download Log Artifacts
 
 If test fails:
 1. Go to failed workflow run
 2. Scroll to **Artifacts** section
-3. Download `emulator-logs`
+3. Download `emulator-test-logs`
 4. Extract and read `logcat.txt`
 
 ### 3. Reproduce Locally
@@ -286,17 +289,36 @@ These optimizations make the emulator start faster in CI environment.
 - Tests document expected behavior
 - Clear pass/fail criteria
 
-## Integration with Other Workflows
+## Integration with Build Workflow
 
-### Build and Release APKs
-- Runs separately: builds production APKs
-- Emulator test: verifies startup
-- Both can run in parallel
+### Job Dependencies
 
-### Main CI Pipeline
-- Can add as required check
-- PR merge blocked if tests fail
-- Ensures quality gate
+```yaml
+jobs:
+  build-apks:          # Job 1: Build APKs
+    runs-on: ubuntu-latest
+    # Builds main app and wear APKs
+    # Uploads artifacts
+    # Creates releases for tags
+    
+  test-wear-emulator:  # Job 2: Test on emulator
+    runs-on: ubuntu-latest
+    # Builds wear APK
+    # Tests on emulator
+    # Uploads test logs if failure
+```
+
+**Both jobs are independent** - they run in parallel for speed.
+
+### Workflow Structure
+
+The combined workflow provides:
+1. **APK Building** - Main purpose
+2. **Automated Testing** - Quality assurance
+3. **Artifact Upload** - Easy downloads
+4. **Release Creation** - For version tags
+
+All in one place!
 
 ## Future Enhancements
 
