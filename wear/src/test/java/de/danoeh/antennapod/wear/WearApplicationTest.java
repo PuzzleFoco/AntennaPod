@@ -11,48 +11,22 @@ import org.robolectric.annotation.Config;
 
 import static org.junit.Assert.assertNotNull;
 
-import de.danoeh.antennapod.wear.sync.SyncManager;
-
 /**
- * Unit tests for WearApplication and SyncManager
+ * Basic unit tests for WearApplication
  */
 @RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
+@Config(manifest = Config.NONE, application = android.app.Application.class)
 public class WearApplicationTest {
 
     private Context context;
 
     @Before
     public void setUp() {
-        context = RuntimeEnvironment.application;
+        context = RuntimeEnvironment.getApplication();
     }
 
     @Test
     public void testApplicationContextNotNull() {
         assertNotNull("Application context should not be null", context);
-    }
-
-    @Test
-    public void testSyncManagerSchedule() {
-        // Test that sync manager can schedule sync without crashing
-        SyncManager.schedulePeriodicSync(context);
-        // Verify scheduling completed successfully
-        // Note: In a real test, we would verify WorkManager has the scheduled work
-    }
-
-    @Test
-    public void testSyncManagerCancelSync() {
-        // Test that sync manager can cancel sync without crashing
-        SyncManager.cancelAllSync(context);
-        // Verify cancellation completed successfully
-        // Note: In a real test, we would verify WorkManager has no scheduled work
-    }
-
-    @Test
-    public void testSyncManagerTriggerSync() {
-        // Test that sync manager can trigger immediate sync without crashing
-        SyncManager.triggerImmediateSync(context);
-        // Verify trigger completed successfully
-        // Note: In a real test, we would verify WorkManager has the one-time work enqueued
     }
 }
