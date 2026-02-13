@@ -172,6 +172,106 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "All APKs are available as a single workflow artifact for download." >> $GITHUB_STEP_SUMMARY
 
+  test-wear-emulator:
+    name: "Test Wear OS on Emulator"
+    needs: build-apks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download APK artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: AntennaPod-APKs
+          path: ./apks
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          ls -lh ./apks/
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Wear OS emulator test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: android-wear
+          arch: x86
+          profile: wear_round
+          disable-animations: true
+          disable-spellchecker: true
+          disable-linux-hw-accel: false
+          emulator-options: -no-window -no-audio -no-boot-anim -camera-back none -camera-front none -gpu swiftshader_indirect
+          script: |
+            echo "🚀 Starting Wear OS emulator test..."
+            
+            # Install APK
+            echo "📲 Installing wear-play-debug.apk..."
+            adb install ./apks/wear-play-debug.apk
+            
+            # Launch app
+            echo "🚀 Launching app..."
+            adb shell am start -n de.danoeh.antennapod.play/de.danoeh.antennapod.wear.ui.MainActivity
+            
+            # Wait for app to initialize
+            echo "⏱️  Waiting for app startup (15 seconds)..."
+            sleep 15
+            
+            # Capture logs
+            echo "🔍 Capturing logcat..."
+            adb logcat -d > emulator-test-logs.txt
+            
+            # Check for critical errors
+            echo "🔍 Checking for errors..."
+            if grep -i "WorkManager is already initialized" emulator-test-logs.txt; then
+              echo "❌ FAILURE: WorkManager double initialization detected!"
+              exit 1
+            fi
+            
+            if grep -i "FATAL EXCEPTION" emulator-test-logs.txt; then
+              echo "❌ FAILURE: Fatal exception detected!"
+              exit 1
+            fi
+            
+            # Check for successful initialization
+            if grep -i "WorkManager" emulator-test-logs.txt | head -5; then
+              echo "✅ WorkManager logs found"
+            fi
+            
+            if grep -i "WearApplication" emulator-test-logs.txt | head -5; then
+              echo "✅ WearApplication logs found"
+            fi
+            
+            if grep -i "MainActivity" emulator-test-logs.txt | head -5; then
+              echo "✅ MainActivity logs found"
+            fi
+            
+            echo "✅ SUCCESS: Emulator test completed!"
+            echo "📝 Logs saved to emulator-test-logs.txt"
+
+      - name: Upload emulator test logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emulator-test-logs
+          path: emulator-test-logs.txt
+          retention-days: 30
+
   create-release:
     name: "Create GitHub Release"
     needs: build-apks
