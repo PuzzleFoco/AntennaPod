@@ -8,23 +8,28 @@ The repository is now configured with a GitHub Actions workflow that automatical
 
 ### When are builds triggered?
 
-1. **On every push to master/develop**: APKs are automatically built
-2. **On pull requests**: APKs are built (for testing)
-3. **On version tags**: APKs are built and published as GitHub Releases
-4. **Manually**: Workflow can be manually started via GitHub Actions
+1. **On push to master**: Builds all APK variants
+2. **On push to develop**: Builds debug variants only
+3. **On version tags**: Builds release variants and creates GitHub Release
+4. **Manually**: Workflow can be manually started via GitHub Actions with variant selection
 
 ## Built APK Variants
 
-The workflow creates the following APK files:
+The workflow can build the following APK files (depending on trigger):
 
 ### Main App (AntennaPod):
-1. **AntennaPod-play-debug.apk** - Play Store variant (Debug)
-2. **AntennaPod-play-release.apk** - Play Store variant (Release)
-3. **AntennaPod-free-release.apk** - F-Droid variant (Release)
+1. **app-play-debug.apk** - Play Store variant (Debug)
+2. **app-play-release-unsigned.apk** - Play Store variant (Release)
+3. **app-free-release-unsigned.apk** - F-Droid variant (Release)
 
 ### Wear OS App:
-4. **AntennaPod-wear-debug.apk** - Wear OS App (Debug)
-5. **AntennaPod-wear-release.apk** - Wear OS App (Release)
+4. **wear-debug.apk** - Wear OS App (Debug)
+5. **wear-release-unsigned.apk** - Wear OS App (Release)
+
+**Note:** To optimize GitHub Actions usage, the workflow builds only the needed variants:
+- Debug variants for development branches
+- Release variants for tags and master branch
+- Selected variant for manual runs
 
 ## Downloading APKs
 
@@ -33,7 +38,8 @@ The workflow creates the following APK files:
 1. Go to the **Actions** tab in the repository
 2. Select a workflow run
 3. Scroll to **Artifacts** at the bottom of the page
-4. Download the desired APK
+4. Download **"AntennaPod-APKs"** (single artifact containing all built APKs)
+5. Extract the zip file to access individual APKs
 
 ### From GitHub Releases (for tags)
 
@@ -47,9 +53,13 @@ The workflow creates the following APK files:
 2. Select **"Build and Release APKs"** workflow
 3. Click **"Run workflow"**
 4. Select the branch (master/develop)
-5. Click **"Run workflow"**
-6. Wait for the build to complete
-7. Download the APKs from artifacts
+5. Choose build variant:
+   - **debug**: Build only debug APKs (faster, for testing)
+   - **release**: Build only release APKs (for distribution)
+   - **all**: Build all variants (most comprehensive)
+6. Click **"Run workflow"**
+7. Wait for the build to complete
+8. Download the APKs from the single artifact
 
 ## Creating a Release
 
