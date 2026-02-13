@@ -57,37 +57,78 @@ jobs:
         run: |
           keytool -noprompt -genkey -v -keystore "app/keystore" -alias alias -storepass password -keypass password -keyalg RSA -validity 10 -dname "CN=antennapod.org, OU=dummy, O=dummy, L=dummy, S=dummy, C=US"
 
+      - name: Determine build variant
+        id: variant
+        run: |
+          if [ "${{ github.event.inputs.build_variant }}" = "debug" ]; then
+            echo "build_type=debug" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.build_variant }}" = "release" ]; then
+            echo "build_type=release" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.inputs.build_variant }}" = "all" ]; then
+            echo "build_type=all" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "build_type=debug" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "build_type=all" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "build_type=release" >> $GITHUB_OUTPUT
+          else
+            echo "build_type=debug" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build APKs (Debug only)
-        if: github.event.inputs.build_variant == 'debug' || (github.event.inputs.build_variant == '' && github.event_name != 'push')
+        if: steps.variant.outputs.build_type == 'debug'
         run: |
           ./gradlew :app:assemblePlayDebug :wear:assemblePlayDebug
 
       - name: Build APKs (Release only)
-        if: github.event.inputs.build_variant == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+        if: steps.variant.outputs.build_type == 'release'
         run: |
           ./gradlew :app:assemblePlayRelease :app:assembleFreeRelease :wear:assemblePlayRelease :wear:assembleFreeRelease
 
       - name: Build APKs (All variants)
-        if: github.event.inputs.build_variant == 'all' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+        if: steps.variant.outputs.build_type == 'all'
         run: |
           ./gradlew :app:assemblePlayDebug :app:assemblePlayRelease :app:assembleFreeRelease :wear:assemblePlayDebug :wear:assemblePlayRelease :wear:assembleFreeRelease
 
       - name: Collect APK files
         run: |
           mkdir -p apk-output
+          echo "Collecting APK files..."
+          
           # Main app APKs
-          find app/build/outputs/apk -name "*.apk" -exec cp {} apk-output/ \; || true
+          if [ -d "app/build/outputs/apk" ]; then
+            echo "Found app APK directory"
+            find app/build/outputs/apk -name "*.apk" -exec cp -v {} apk-output/ \;
+          else
+            echo "Warning: app/build/outputs/apk not found"
+          fi
+          
           # Wear OS APKs
-          find wear/build/outputs/apk -name "*.apk" -exec cp {} apk-output/ \; || true
+          if [ -d "wear/build/outputs/apk" ]; then
+            echo "Found wear APK directory"
+            find wear/build/outputs/apk -name "*.apk" -exec cp -v {} apk-output/ \;
+          else
+            echo "Warning: wear/build/outputs/apk not found"
+          fi
+          
           # List what we found
-          ls -lh apk-output/
+          echo ""
+          echo "Collected APK files:"
+          ls -lh apk-output/ || echo "No APKs found!"
+          
+          # Verify we have files
+          if [ -z "$(ls -A apk-output)" ]; then
+            echo "ERROR: No APK files were collected!"
+            exit 1
+          fi
 
       - name: Upload APKs (Single artifact)
         uses: actions/upload-artifact@v4
         with:
           name: AntennaPod-APKs
           path: apk-output/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
 
       - name: Create Build Summary
