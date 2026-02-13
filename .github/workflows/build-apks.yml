@@ -2,7 +2,7 @@ name: Build and Release APKs
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ master, develop, copilot/add-wear-os-antenna-pod ]
     tags:
       - 'v*'
   workflow_dispatch:
@@ -70,6 +70,8 @@ jobs:
             echo "build_type=debug" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
             echo "build_type=all" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/copilot/add-wear-os-antenna-pod" ]; then
+            echo "build_type=debug" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             echo "build_type=release" >> $GITHUB_OUTPUT
           else
