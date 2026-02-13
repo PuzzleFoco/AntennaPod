@@ -5,6 +5,15 @@ on:
     branches: [ master, develop, copilot/add-wear-os-antenna-pod ]
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+      - '.github/workflows/**'
+      - '!.github/workflows/build-apks.yml'
+      - '**.png'
+      - '**.jpg'
+      - '**.svg'
   workflow_dispatch:
     inputs:
       build_variant:
@@ -25,13 +34,13 @@ jobs:
   build-apks:
     name: "Build APKs"
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -49,8 +58,22 @@ jobs:
           restore-keys: |
             gradle-
 
+      - name: Cache Build Outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            app/build
+            wear/build
+            */build
+          key: build-cache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            build-cache-${{ runner.os }}-
+
       - name: Configure parallel build
-        run: echo "org.gradle.parallel=true" >> local.properties
+        run: |
+          echo "org.gradle.parallel=true" >> local.properties
+          echo "org.gradle.caching=true" >> local.properties
+          echo "org.gradle.configureondemand=true" >> local.properties
 
       - name: Create temporary release keystore
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
