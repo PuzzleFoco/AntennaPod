@@ -1,6 +1,7 @@
 package de.danoeh.antennapod.wear.ui;
 
 import android.content.ComponentName;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaControllerCompat;
@@ -30,6 +31,7 @@ public class MainActivity extends FragmentActivity implements
     private TextView statusText;
     private Button playPauseButton;
     private Button syncButton;
+    private Button settingsButton;
     private TextView syncStatusText;
     
     private MediaBrowserCompat mediaBrowser;
@@ -48,11 +50,13 @@ public class MainActivity extends FragmentActivity implements
         statusText = findViewById(R.id.status_text);
         playPauseButton = findViewById(R.id.play_pause_button);
         syncButton = findViewById(R.id.sync_button);
+        settingsButton = findViewById(R.id.settings_button);
         syncStatusText = findViewById(R.id.sync_status_text);
         
         // Set up button listeners
         playPauseButton.setOnClickListener(v -> togglePlayback());
         syncButton.setOnClickListener(v -> triggerSync());
+        settingsButton.setOnClickListener(v -> openSettings());
         
         // Initialize media browser
         mediaBrowser = new MediaBrowserCompat(
@@ -164,6 +168,11 @@ public class MainActivity extends FragmentActivity implements
         syncStatusText.setText(R.string.syncing);
         syncButton.setEnabled(false);
         SyncManager.triggerImmediateSync(this);
+    }
+
+    private void openSettings() {
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

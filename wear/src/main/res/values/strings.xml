@@ -33,6 +33,15 @@
     <string name="sync_settings">Sync Settings</string>
     <string name="playback_settings">Playback Settings</string>
     <string name="about">About</string>
+    <string name="sync_provider">Sync Provider</string>
+    <string name="gpodder_net">gpodder.net</string>
+    <string name="nextcloud_gpodder">Nextcloud GPodder</string>
+    <string name="server_url">Server URL</string>
+    <string name="server_url_hint">https://your-server.com</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="test_connection">Test Connection</string>
+    <string name="save">Save</string>
     
     <!-- Connection -->
     <string name="connecting">Connecting…</string>
