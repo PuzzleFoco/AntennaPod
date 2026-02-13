@@ -226,7 +226,7 @@ jobs:
             
             # Launch app
             echo "🚀 Launching app..."
-            adb shell am start -n de.danoeh.antennapod.play/de.danoeh.antennapod.wear.ui.MainActivity
+            adb shell am start -n de.danoeh.antennapod.wear.debug/de.danoeh.antennapod.wear.ui.MainActivity
             
             # Wait for app to initialize
             echo "⏱️  Waiting for app startup (15 seconds)..."
