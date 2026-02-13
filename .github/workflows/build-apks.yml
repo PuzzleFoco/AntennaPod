@@ -17,6 +17,10 @@ on:
           - release
           - all
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   build-apks:
     name: "Build APKs"
