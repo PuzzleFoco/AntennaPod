@@ -61,6 +61,16 @@ public class WearSyncWorker extends Worker {
 
             return result;
 
+        } catch (java.io.IOException e) {
+            Log.e(TAG, "Synchronization failed due to network error", e);
+            
+            // Notify that sync failed
+            EventBus.getDefault().post(new SyncServiceEvent(
+                    R.string.sync_failed
+            ));
+
+            // Retry on network errors
+            return Result.retry();
         } catch (Exception e) {
             Log.e(TAG, "Synchronization failed", e);
             
@@ -68,11 +78,6 @@ public class WearSyncWorker extends Worker {
             EventBus.getDefault().post(new SyncServiceEvent(
                     R.string.sync_failed
             ));
-
-            // Retry if it's a network error
-            if (e instanceof java.io.IOException) {
-                return Result.retry();
-            }
             
             return Result.failure();
         }
