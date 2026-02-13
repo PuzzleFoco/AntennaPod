@@ -58,7 +58,8 @@
         <receiver
             android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+            tools:replace="android:enabled" />
 
         <!-- Metadata for standalone Wear OS app -->
         <meta-data
