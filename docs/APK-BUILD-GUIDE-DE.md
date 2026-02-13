@@ -23,12 +23,13 @@ Der Workflow kann folgende APK-Dateien erstellen (abhängig vom Auslöser):
 3. **app-free-release-unsigned.apk** - F-Droid Variante (Release)
 
 ### Wear OS App:
-4. **wear-debug.apk** - Wear OS App (Debug)
-5. **wear-release-unsigned.apk** - Wear OS App (Release)
+4. **wear-play-debug.apk** - Wear OS App Play Variante (Debug)
+5. **wear-play-release-unsigned.apk** - Wear OS App Play Variante (Release)
+6. **wear-free-release-unsigned.apk** - Wear OS App Free Variante (Release)
 
 **Hinweis:** Um GitHub Actions-Nutzung zu optimieren, baut der Workflow nur benötigte Varianten:
-- Debug-Varianten für Entwicklungs-Branches
-- Release-Varianten für Tags und master Branch
+- Debug-Varianten (play) für Entwicklungs-Branches
+- Release-Varianten (play + free) für Tags und master Branch
 - Ausgewählte Variante für manuelle Ausführungen
 
 ## APKs Herunterladen

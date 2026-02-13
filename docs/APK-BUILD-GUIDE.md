@@ -23,12 +23,13 @@ The workflow can build the following APK files (depending on trigger):
 3. **app-free-release-unsigned.apk** - F-Droid variant (Release)
 
 ### Wear OS App:
-4. **wear-debug.apk** - Wear OS App (Debug)
-5. **wear-release-unsigned.apk** - Wear OS App (Release)
+4. **wear-play-debug.apk** - Wear OS App Play variant (Debug)
+5. **wear-play-release-unsigned.apk** - Wear OS App Play variant (Release)
+6. **wear-free-release-unsigned.apk** - Wear OS App Free variant (Release)
 
 **Note:** To optimize GitHub Actions usage, the workflow builds only the needed variants:
-- Debug variants for development branches
-- Release variants for tags and master branch
+- Debug variants (play) for development branches
+- Release variants (play + free) for tags and master branch
 - Selected variant for manual runs
 
 ## Downloading APKs

@@ -60,17 +60,17 @@ jobs:
       - name: Build APKs (Debug only)
         if: github.event.inputs.build_variant == 'debug' || (github.event.inputs.build_variant == '' && github.event_name != 'push')
         run: |
-          ./gradlew :app:assemblePlayDebug :wear:assembleDebug
+          ./gradlew :app:assemblePlayDebug :wear:assemblePlayDebug
 
       - name: Build APKs (Release only)
         if: github.event.inputs.build_variant == 'release' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
         run: |
-          ./gradlew :app:assemblePlayRelease :app:assembleFreeRelease :wear:assembleRelease
+          ./gradlew :app:assemblePlayRelease :app:assembleFreeRelease :wear:assemblePlayRelease :wear:assembleFreeRelease
 
       - name: Build APKs (All variants)
         if: github.event.inputs.build_variant == 'all' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
         run: |
-          ./gradlew :app:assemblePlayDebug :app:assemblePlayRelease :app:assembleFreeRelease :wear:assembleDebug :wear:assembleRelease
+          ./gradlew :app:assemblePlayDebug :app:assemblePlayRelease :app:assembleFreeRelease :wear:assemblePlayDebug :wear:assemblePlayRelease :wear:assembleFreeRelease
 
       - name: Collect APK files
         run: |

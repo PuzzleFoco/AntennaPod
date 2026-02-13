@@ -21,6 +21,17 @@ android {
         }
     }
 
+    // Product flavors matching the main app and library modules
+    flavorDimensions += ["market"]
+    productFlavors {
+        free {
+            dimension "market"
+        }
+        play {
+            dimension "market"
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
