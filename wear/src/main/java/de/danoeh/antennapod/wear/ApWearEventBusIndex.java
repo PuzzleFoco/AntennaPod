@@ -1,11 +1,7 @@
 package de.danoeh.antennapod.wear;
 
-import org.greenrobot.eventbus.meta.SimpleSubscriberInfo;
-import org.greenrobot.eventbus.meta.SubscriberMethodInfo;
 import org.greenrobot.eventbus.meta.SubscriberInfo;
 import org.greenrobot.eventbus.meta.SubscriberInfoIndex;
-
-import org.greenrobot.eventbus.ThreadMode;
 
 /**
  * EventBus index for Wear OS app.

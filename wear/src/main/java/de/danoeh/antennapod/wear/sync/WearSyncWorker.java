@@ -40,7 +40,7 @@ public class WearSyncWorker extends Worker {
         try {
             // Notify that sync is starting
             EventBus.getDefault().post(new SyncServiceEvent(
-                SyncServiceEvent.MessageType.SYNC_STARTED
+                    SyncServiceEvent.MessageType.SYNC_STARTED
             ));
 
             // Get the sync provider (gpodder.net or Nextcloud)
@@ -53,7 +53,7 @@ public class WearSyncWorker extends Worker {
 
             // Notify that sync completed successfully
             EventBus.getDefault().post(new SyncServiceEvent(
-                SyncServiceEvent.MessageType.SYNC_COMPLETED
+                    SyncServiceEvent.MessageType.SYNC_COMPLETED
             ));
 
             Log.d(TAG, "Synchronization completed successfully");
@@ -64,7 +64,7 @@ public class WearSyncWorker extends Worker {
             
             // Notify that sync failed
             EventBus.getDefault().post(new SyncServiceEvent(
-                SyncServiceEvent.MessageType.SYNC_FAILED
+                    SyncServiceEvent.MessageType.SYNC_FAILED
             ));
 
             // Retry if it's a network error

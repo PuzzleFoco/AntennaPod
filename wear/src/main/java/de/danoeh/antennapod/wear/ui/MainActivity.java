@@ -5,11 +5,9 @@ import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.wear.ambient.AmbientModeSupport;
 
@@ -58,10 +56,10 @@ public class MainActivity extends FragmentActivity implements
         
         // Initialize media browser
         mediaBrowser = new MediaBrowserCompat(
-            this,
-            new ComponentName(this, WearPlaybackService.class),
-            connectionCallback,
-            null
+                this,
+                new ComponentName(this, WearPlaybackService.class),
+                connectionCallback,
+                null
         );
     }
 
@@ -101,37 +99,37 @@ public class MainActivity extends FragmentActivity implements
 
     private final MediaBrowserCompat.ConnectionCallback connectionCallback =
             new MediaBrowserCompat.ConnectionCallback() {
-        @Override
-        public void onConnected() {
-            try {
-                mediaController = new MediaControllerCompat(
-                    MainActivity.this,
-                    mediaBrowser.getSessionToken()
-                );
-                MediaControllerCompat.setMediaController(MainActivity.this, mediaController);
-                mediaController.registerCallback(controllerCallback);
-                
-                // Update UI based on current playback state
-                updatePlaybackUI();
-                statusText.setText(R.string.connected);
-            } catch (Exception e) {
-                statusText.setText(R.string.error_occurred);
-            }
-        }
+                @Override
+                public void onConnected() {
+                    try {
+                        mediaController = new MediaControllerCompat(
+                                MainActivity.this,
+                                mediaBrowser.getSessionToken()
+                        );
+                        MediaControllerCompat.setMediaController(MainActivity.this, mediaController);
+                        mediaController.registerCallback(controllerCallback);
 
-        @Override
-        public void onConnectionFailed() {
-            statusText.setText(R.string.no_connection);
-        }
-    };
+                        // Update UI based on current playback state
+                        updatePlaybackUI();
+                        statusText.setText(R.string.connected);
+                    } catch (Exception e) {
+                        statusText.setText(R.string.error_occurred);
+                    }
+                }
+
+                @Override
+                public void onConnectionFailed() {
+                    statusText.setText(R.string.no_connection);
+                }
+            };
 
     private final MediaControllerCompat.Callback controllerCallback =
             new MediaControllerCompat.Callback() {
-        @Override
-        public void onPlaybackStateChanged(PlaybackStateCompat state) {
-            updatePlaybackUI();
-        }
-    };
+                @Override
+                public void onPlaybackStateChanged(PlaybackStateCompat state) {
+                    updatePlaybackUI();
+                }
+            };
 
     private void togglePlayback() {
         if (mediaController == null) {
@@ -182,6 +180,9 @@ public class MainActivity extends FragmentActivity implements
             case SYNC_FAILED:
                 syncStatusText.setText(R.string.sync_failed);
                 syncButton.setEnabled(true);
+                break;
+            default:
+                // Ignore unknown message types
                 break;
         }
     }

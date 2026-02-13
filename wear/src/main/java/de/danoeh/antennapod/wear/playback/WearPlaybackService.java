@@ -1,6 +1,5 @@
 package de.danoeh.antennapod.wear.playback;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -39,8 +38,8 @@ public class WearPlaybackService extends MediaBrowserServiceCompat {
         
         // Enable callbacks from MediaButtons and TransportControls
         mediaSession.setFlags(
-            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-            MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
         );
         
         // Set an initial PlaybackState with ACTION_PLAY, so media buttons can start the player

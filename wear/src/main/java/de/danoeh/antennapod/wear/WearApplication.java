@@ -8,7 +8,6 @@ import androidx.work.WorkManager;
 
 import org.greenrobot.eventbus.EventBus;
 
-import de.danoeh.antennapod.event.settings.SettingsStorageActionsEnum;
 import de.danoeh.antennapod.storage.preferences.UserPreferences;
 
 /**
