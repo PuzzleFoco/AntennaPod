@@ -168,22 +168,20 @@ public class MainActivity extends FragmentActivity implements
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onSyncEvent(SyncServiceEvent event) {
-        switch (event.getMessageType()) {
-            case SYNC_STARTED:
-                syncStatusText.setText(R.string.syncing);
-                syncButton.setEnabled(false);
-                break;
-            case SYNC_COMPLETED:
-                syncStatusText.setText(R.string.sync_complete);
-                syncButton.setEnabled(true);
-                break;
-            case SYNC_FAILED:
-                syncStatusText.setText(R.string.sync_failed);
-                syncButton.setEnabled(true);
-                break;
-            default:
-                // Ignore unknown message types
-                break;
+        // Update sync status based on the message resource ID
+        int messageResId = event.getMessageResId();
+        
+        // Check if it's one of our sync-related messages
+        if (messageResId == R.string.syncing) {
+            syncStatusText.setText(R.string.syncing);
+            syncButton.setEnabled(false);
+        } else if (messageResId == R.string.sync_complete) {
+            syncStatusText.setText(R.string.sync_complete);
+            syncButton.setEnabled(true);
+        } else if (messageResId == R.string.sync_failed) {
+            syncStatusText.setText(R.string.sync_failed);
+            syncButton.setEnabled(true);
         }
+        // For other message types from the main app, just ignore them
     }
 }

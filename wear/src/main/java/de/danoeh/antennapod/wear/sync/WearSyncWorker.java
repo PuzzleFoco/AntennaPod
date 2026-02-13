@@ -11,60 +11,62 @@ import org.greenrobot.eventbus.EventBus;
 
 import de.danoeh.antennapod.event.SyncServiceEvent;
 import de.danoeh.antennapod.net.sync.service.SyncService;
-import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationProvider;
-import de.danoeh.antennapod.storage.preferences.UserPreferences;
+import de.danoeh.antennapod.storage.preferences.SynchronizationSettings;
+import de.danoeh.antennapod.wear.R;
 
 /**
- * Worker that performs synchronization with gpodder or Nextcloud GPodder.
- * This allows the Wear OS app to sync listening history independently.
+ * Worker that triggers synchronization with gpodder or Nextcloud GPodder.
+ * This is a simple wrapper that delegates to the main SyncService worker.
  */
 public class WearSyncWorker extends Worker {
 
     private static final String TAG = "WearSyncWorker";
+    private final WorkerParameters params;
 
     public WearSyncWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
+        this.params = workerParams;
     }
 
     @NonNull
     @Override
     public Result doWork() {
-        Log.d(TAG, "Starting synchronization");
+        Log.d(TAG, "Wear sync requested");
 
-        // Check if sync is enabled
-        if (!UserPreferences.isGpodderEnabled()) {
-            Log.d(TAG, "Sync is disabled");
+        // Check if sync is configured
+        if (!SynchronizationSettings.isProviderConnected()) {
+            Log.d(TAG, "Sync is not configured");
             return Result.success();
         }
 
         try {
             // Notify that sync is starting
             EventBus.getDefault().post(new SyncServiceEvent(
-                    SyncServiceEvent.MessageType.SYNC_STARTED
+                    R.string.syncing
             ));
 
-            // Get the sync provider (gpodder.net or Nextcloud)
-            SynchronizationProvider provider = UserPreferences.getGpodderProvider();
-            Log.d(TAG, "Using sync provider: " + provider);
+            // Create and execute the actual SyncService worker
+            // The SyncService handles all the actual synchronization logic
+            SyncService syncService = new SyncService(getApplicationContext(), params);
+            Result result = syncService.doWork();
 
-            // Perform the actual synchronization
-            // This will sync subscriptions and episode actions (play position, etc.)
-            SyncService.performFullSync(getApplicationContext());
+            if (result instanceof Result.Success) {
+                Log.d(TAG, "Synchronization completed successfully");
+                EventBus.getDefault().post(new SyncServiceEvent(
+                        R.string.sync_complete
+                ));
+            } else {
+                Log.w(TAG, "Synchronization did not complete successfully");
+            }
 
-            // Notify that sync completed successfully
-            EventBus.getDefault().post(new SyncServiceEvent(
-                    SyncServiceEvent.MessageType.SYNC_COMPLETED
-            ));
-
-            Log.d(TAG, "Synchronization completed successfully");
-            return Result.success();
+            return result;
 
         } catch (Exception e) {
             Log.e(TAG, "Synchronization failed", e);
             
             // Notify that sync failed
             EventBus.getDefault().post(new SyncServiceEvent(
-                    SyncServiceEvent.MessageType.SYNC_FAILED
+                    R.string.sync_failed
             ));
 
             // Retry if it's a network error

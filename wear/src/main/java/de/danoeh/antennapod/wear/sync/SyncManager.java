@@ -12,7 +12,7 @@ import androidx.work.WorkManager;
 
 import java.util.concurrent.TimeUnit;
 
-import de.danoeh.antennapod.storage.preferences.UserPreferences;
+import de.danoeh.antennapod.storage.preferences.SynchronizationSettings;
 
 /**
  * Manages synchronization scheduling for the Wear OS app.
@@ -28,8 +28,8 @@ public class SyncManager {
      * Schedule periodic synchronization based on user preferences
      */
     public static void schedulePeriodicSync(Context context) {
-        if (!UserPreferences.isGpodderEnabled()) {
-            Log.d(TAG, "Sync disabled, canceling periodic sync");
+        if (!SynchronizationSettings.isProviderConnected()) {
+            Log.d(TAG, "Sync not configured, canceling periodic sync");
             cancelPeriodicSync(context);
             return;
         }
