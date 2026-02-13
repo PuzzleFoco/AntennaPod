@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Wear OS permissions -->
-    <uses-feature android:name="android.hardware.type.watch" android:required="false" />
+    <uses-feature android:name="android.hardware.type.watch" />
     
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
