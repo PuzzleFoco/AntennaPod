@@ -239,12 +239,7 @@ jobs:
             # Check for critical errors
             echo "🔍 Checking for errors..."
             grep -qi "WorkManager is already initialized" emulator-test-logs.txt && { echo "❌ FAILURE: WorkManager double initialization detected!"; exit 1; } || true
-            if grep -qi "FATAL EXCEPTION" emulator-test-logs.txt; then
-              echo "❌ FAILURE: Fatal exception detected!"
-              echo "📄 Exception details:"
-              grep -A 20 "FATAL EXCEPTION" emulator-test-logs.txt | head -25
-              exit 1
-            fi
+            grep -qi "FATAL EXCEPTION" emulator-test-logs.txt && { echo "❌ FAILURE: Fatal exception detected!"; echo "📄 Exception details:"; grep -A 20 "FATAL EXCEPTION" emulator-test-logs.txt | head -25; exit 1; } || true
             
             # Check for successful initialization
             grep -qi "WorkManager" emulator-test-logs.txt && echo "✅ WorkManager logs found" || echo "⚠️  No WorkManager logs found"
