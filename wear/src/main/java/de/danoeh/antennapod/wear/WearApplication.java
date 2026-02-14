@@ -23,9 +23,8 @@ public class WearApplication extends Application {
         super.onCreate();
         appContext = getApplicationContext();
         
-        // Initialize EventBus
+        // Initialize EventBus (without index - not needed for simple subscriber setup)
         EventBus.builder()
-                .addIndex(new ApWearEventBusIndex())
                 .logNoSubscriberMessages(false)
                 .sendNoSubscriberEvent(false)
                 .installDefaultEventBus();
