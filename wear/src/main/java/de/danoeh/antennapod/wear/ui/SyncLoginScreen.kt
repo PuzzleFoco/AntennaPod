@@ -74,6 +74,8 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
     private val _password = MutableStateFlow("")
     val password: StateFlow<String> = _password
 
+    private val executor = Executors.newSingleThreadExecutor()
+
     fun setHost(value: String) { _host.value = value }
     fun setUsername(value: String) { _username.value = value }
     fun setPassword(value: String) { _password.value = value }
@@ -94,9 +96,7 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
             SynchronizationProvider.NEXTCLOUD_GPODDER -> "https://apps.nextcloud.com/apps/gpoddersync"
         }
         try {
-            val remoteActivityHelper = RemoteActivityHelper(
-                getApplication(), Executors.newSingleThreadExecutor()
-            )
+            val remoteActivityHelper = RemoteActivityHelper(getApplication(), executor)
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 data = Uri.parse(url)
                 addCategory(Intent.CATEGORY_BROWSABLE)
@@ -182,6 +182,11 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                 _isLoggingIn.value = false
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        executor.shutdown()
     }
 }
 

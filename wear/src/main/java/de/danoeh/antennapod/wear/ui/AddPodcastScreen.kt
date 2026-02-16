@@ -69,11 +69,11 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
     private val _resultMessage = MutableStateFlow<String?>(null)
     val resultMessage: StateFlow<String?> = _resultMessage
 
+    private val executor = Executors.newSingleThreadExecutor()
+
     fun openSearchOnPhone() {
         try {
-            val remoteActivityHelper = RemoteActivityHelper(
-                getApplication(), Executors.newSingleThreadExecutor()
-            )
+            val remoteActivityHelper = RemoteActivityHelper(getApplication(), executor)
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 data = Uri.parse("https://gpodder.net/search")
                 addCategory(Intent.CATEGORY_BROWSABLE)
@@ -190,6 +190,11 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private class StopParsingException : RuntimeException()
+
+    override fun onCleared() {
+        super.onCleared()
+        executor.shutdown()
+    }
 }
 
 private const val INPUT_KEY_URL = "podcast_url"
