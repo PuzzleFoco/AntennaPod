@@ -52,7 +52,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
+import org.xml.sax.Attributes
 import org.xml.sax.InputSource
+import org.xml.sax.helpers.DefaultHandler
 import java.io.StringReader
 import javax.xml.parsers.SAXParserFactory
 
@@ -88,10 +90,10 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
                         if (response.isSuccessful) {
                             val body = response.body?.string()
                             if (body != null) {
-                                // Extract title from XML
-                                val titleMatch = Regex("<title>([^<]+)</title>").find(body)
-                                if (titleMatch != null) {
-                                    feed.title = titleMatch.groupValues[1].trim()
+                                // Extract title using SAX parser
+                                val title = parseFeedTitle(body)
+                                if (title != null) {
+                                    feed.title = title
                                 }
                             }
                         }
@@ -118,6 +120,54 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
     }
+
+    private fun parseFeedTitle(xml: String): String? {
+        var title: String? = null
+        try {
+            val factory = SAXParserFactory.newInstance()
+            val parser = factory.newSAXParser()
+            parser.parse(InputSource(StringReader(xml)), object : DefaultHandler() {
+                private var insideTitle = false
+                private var depth = 0
+                private val chars = StringBuilder()
+
+                override fun startElement(
+                    uri: String?, localName: String?,
+                    qName: String?, attributes: Attributes?
+                ) {
+                    depth++
+                    if ((localName.equals("title", ignoreCase = true)
+                                || qName.equals("title", ignoreCase = true)) && depth <= 3
+                    ) {
+                        insideTitle = true
+                        chars.setLength(0)
+                    }
+                }
+
+                override fun characters(ch: CharArray, start: Int, length: Int) {
+                    if (insideTitle) {
+                        chars.append(ch, start, length)
+                    }
+                }
+
+                override fun endElement(uri: String?, localName: String?, qName: String?) {
+                    if (insideTitle) {
+                        title = chars.toString().trim()
+                        insideTitle = false
+                        throw StopParsingException()
+                    }
+                    depth--
+                }
+            })
+        } catch (e: StopParsingException) {
+            // Expected: we stop after finding the first title
+        } catch (e: Exception) {
+            // Parsing failed, return null
+        }
+        return title
+    }
+
+    private class StopParsingException : RuntimeException()
 }
 
 private const val INPUT_KEY_URL = "podcast_url"

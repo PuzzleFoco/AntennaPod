@@ -76,6 +76,16 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
     fun setUsername(value: String) { _username.value = value }
     fun setPassword(value: String) { _password.value = value }
 
+    private fun getEffectiveHost(provider: SynchronizationProvider): String {
+        return _host.value.ifBlank {
+            if (provider == SynchronizationProvider.GPODDER_NET) DEFAULT_GPODDER_HOST else ""
+        }
+    }
+
+    private fun getDeviceId(): String {
+        return android.os.Build.MODEL.replace(" ", "") + "-wear"
+    }
+
     fun login(provider: SynchronizationProvider, onSuccess: () -> Unit) {
         if (_username.value.isBlank() || _password.value.isBlank()) {
             _statusMessage.value = "Please enter username and password"
@@ -87,11 +97,8 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
             _statusMessage.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    val hostUrl = _host.value.ifBlank {
-                        if (provider == SynchronizationProvider.GPODDER_NET) "gpodder.net" else ""
-                    }
-
-                    val deviceId = android.os.Build.MODEL.replace(" ", "") + "-wear"
+                    val hostUrl = getEffectiveHost(provider)
+                    val deviceId = getDeviceId()
 
                     when (provider) {
                         SynchronizationProvider.GPODDER_NET -> {
@@ -126,14 +133,8 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                     // Save credentials
                     SynchronizationCredentials.setUsername(_username.value)
                     SynchronizationCredentials.setPassword(_password.value)
-                    SynchronizationCredentials.setHosturl(
-                        _host.value.ifBlank {
-                            if (provider == SynchronizationProvider.GPODDER_NET) "gpodder.net" else ""
-                        }
-                    )
-                    SynchronizationCredentials.setDeviceId(
-                        android.os.Build.MODEL.replace(" ", "") + "-wear"
-                    )
+                    SynchronizationCredentials.setHosturl(hostUrl)
+                    SynchronizationCredentials.setDeviceId(deviceId)
                     SynchronizationSettings.setSelectedSyncProvider(provider.identifier)
                 }
 
@@ -160,6 +161,7 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
     }
 }
 
+private const val DEFAULT_GPODDER_HOST = "gpodder.net"
 private const val INPUT_KEY_HOST = "sync_host"
 private const val INPUT_KEY_USERNAME = "sync_username"
 private const val INPUT_KEY_PASSWORD = "sync_password"
@@ -267,7 +269,7 @@ fun SyncLoginScreen(
                             Text(
                                 text = host.ifBlank {
                                     if (provider == SynchronizationProvider.GPODDER_NET)
-                                        "gpodder.net" else "your-server.com"
+                                        DEFAULT_GPODDER_HOST else "your-server.com"
                                 },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
