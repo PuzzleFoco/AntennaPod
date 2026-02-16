@@ -53,10 +53,13 @@
     <string name="wear_syncing">Syncing…</string>
     <string name="wear_open_on_phone">Open on Phone</string>
     <string name="wear_open_on_phone_hint">Create account on phone</string>
+    <string name="wear_open_on_phone_fallback">Visit on phone: %s</string>
+    <string name="wear_open_server_on_phone">Open your server on phone</string>
     <string name="wear_check_phone">Check your phone</string>
     <string name="wear_phone_not_connected">Phone not connected</string>
     <string name="wear_search_on_phone">Search on Phone</string>
     <string name="wear_search_on_phone_hint">Find podcasts on phone</string>
-    <string name="wear_enter_username">Enter username</string>
-    <string name="wear_enter_password">Enter password</string>
+    <string name="wear_enter_username">Tap to enter on phone</string>
+    <string name="wear_enter_password">Tap to enter on phone</string>
+    <string name="wear_nextcloud_host_hint">cloud.example.com</string>
 </resources>

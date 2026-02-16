@@ -82,8 +82,10 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
             _resultMessage.value = getApplication<Application>()
                 .getString(R.string.wear_check_phone)
         } catch (e: Exception) {
+            // RemoteActivityHelper requires Google Play Services; on F-Droid builds
+            // or when no phone is connected, fall back to showing the URL
             _resultMessage.value = getApplication<Application>()
-                .getString(R.string.wear_phone_not_connected)
+                .getString(R.string.wear_open_on_phone_fallback, "https://gpodder.net/search")
         }
     }
 

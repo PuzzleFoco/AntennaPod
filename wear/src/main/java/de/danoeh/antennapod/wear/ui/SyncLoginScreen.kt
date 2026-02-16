@@ -93,7 +93,18 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
     fun openLoginOnPhone(provider: SynchronizationProvider) {
         val url = when (provider) {
             SynchronizationProvider.GPODDER_NET -> "https://gpodder.net/register/"
-            SynchronizationProvider.NEXTCLOUD_GPODDER -> "https://apps.nextcloud.com/apps/gpoddersync"
+            SynchronizationProvider.NEXTCLOUD_GPODDER -> {
+                val hostValue = _host.value.trim()
+                if (hostValue.isNotBlank()) {
+                    if (!hostValue.startsWith("http://") && !hostValue.startsWith("https://")) {
+                        "https://$hostValue"
+                    } else {
+                        hostValue
+                    }
+                } else {
+                    "https://nextcloud.com/install/"
+                }
+            }
         }
         try {
             val remoteActivityHelper = RemoteActivityHelper(getApplication(), executor)
@@ -105,8 +116,10 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
             _statusMessage.value = getApplication<Application>()
                 .getString(R.string.wear_check_phone)
         } catch (e: Exception) {
+            // RemoteActivityHelper requires Google Play Services; on F-Droid builds
+            // or when no phone is connected, fall back to showing the URL
             _statusMessage.value = getApplication<Application>()
-                .getString(R.string.wear_phone_not_connected)
+                .getString(R.string.wear_open_on_phone_fallback, url)
         }
     }
 
@@ -274,38 +287,7 @@ fun SyncLoginScreen(
                     }
                 }
             } else {
-                // Open on phone button
-                item {
-                    Chip(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { syncLoginViewModel.openLoginOnPhone(provider) },
-                        label = {
-                            Text(
-                                text = stringResource(R.string.wear_open_on_phone),
-                                maxLines = 1
-                            )
-                        },
-                        secondaryLabel = {
-                            Text(
-                                text = stringResource(R.string.wear_open_on_phone_hint),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_phone),
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        },
-                        colors = ChipDefaults.chipColors(
-                            backgroundColor = MaterialTheme.colors.surface
-                        )
-                    )
-                }
-
-                // Server URL field
+                // Server URL field (uses phone keyboard via RemoteInput)
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
@@ -329,12 +311,20 @@ fun SyncLoginScreen(
                             Text(
                                 text = host.ifBlank {
                                     if (provider == SynchronizationProvider.GPODDER_NET)
-                                        DEFAULT_GPODDER_HOST else "your-server.com"
+                                        DEFAULT_GPODDER_HOST
+                                    else stringResource(R.string.wear_nextcloud_host_hint)
                                 },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 color = if (host.isBlank()) MaterialTheme.colors.onSurfaceVariant
                                 else MaterialTheme.colors.onSurface
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
                             )
                         },
                         colors = ChipDefaults.chipColors(
@@ -343,7 +333,7 @@ fun SyncLoginScreen(
                     )
                 }
 
-                // Username field
+                // Username field (uses phone keyboard via RemoteInput)
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
@@ -372,13 +362,20 @@ fun SyncLoginScreen(
                                 else MaterialTheme.colors.onSurface
                             )
                         },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
                         colors = ChipDefaults.chipColors(
                             backgroundColor = MaterialTheme.colors.surface
                         )
                     )
                 }
 
-                // Password field
+                // Password field (uses phone keyboard via RemoteInput)
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
@@ -407,6 +404,13 @@ fun SyncLoginScreen(
                                 else MaterialTheme.colors.onSurface
                             )
                         },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
                         colors = ChipDefaults.chipColors(
                             backgroundColor = MaterialTheme.colors.surface
                         )
@@ -432,6 +436,39 @@ fun SyncLoginScreen(
                         enabled = username.isNotBlank() && password.isNotBlank(),
                         colors = ChipDefaults.chipColors(
                             backgroundColor = MaterialTheme.colors.primary
+                        )
+                    )
+                }
+
+                // Open on phone button (requires Google Play Services)
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { syncLoginViewModel.openLoginOnPhone(provider) },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_open_on_phone),
+                                maxLines = 1
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = if (provider == SynchronizationProvider.NEXTCLOUD_GPODDER)
+                                    stringResource(R.string.wear_open_server_on_phone)
+                                else stringResource(R.string.wear_open_on_phone_hint),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
                         )
                     )
                 }
