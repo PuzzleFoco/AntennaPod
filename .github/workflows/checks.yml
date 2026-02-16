@@ -158,6 +158,7 @@ jobs:
 
   ci-summary:
     name: "CI Summary"
+    if: always()
     needs:
       - wrapper-validation
       - emulator-test
@@ -165,11 +166,18 @@ jobs:
       - wear-build
     runs-on: ubuntu-latest
     steps:
-      - run: echo "All checks passed"
+      - name: Check results
+        run: |
+          if [ "${{ needs.wrapper-validation.result }}" != "success" ]; then exit 1; fi
+          if [ "${{ needs.emulator-test.result }}" != "success" ]; then exit 1; fi
+          if [ "${{ needs.unit-test.result }}" != "success" ]; then exit 1; fi
+          if [ "${{ needs.wear-build.result }}" != "success" ] && [ "${{ needs.wear-build.result }}" != "skipped" ]; then exit 1; fi
+          echo "All checks passed"
 
   wear-build:
     name: "Wear OS Build & Test"
     needs: static-analysis
+    if: contains(github.head_ref, 'wear') || contains(github.ref, 'wear')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

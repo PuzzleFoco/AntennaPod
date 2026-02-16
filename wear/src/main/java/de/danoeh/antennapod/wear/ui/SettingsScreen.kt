@@ -2,16 +2,13 @@ package de.danoeh.antennapod.wear.ui
 
 import android.app.Application
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -98,6 +95,11 @@ fun SettingsScreen(
     val isSyncing by settingsViewModel.isSyncing.collectAsState()
     val listState = rememberScalingLazyListState()
     val context = LocalContext.current
+
+    // Reload sync settings every time this screen is composed (e.g. after returning from login)
+    LaunchedEffect(Unit) {
+        settingsViewModel.loadSyncSettings()
+    }
 
     Scaffold(
         timeText = { TimeText() },

@@ -51,4 +51,12 @@
     <string name="wear_add_podcast_hint">Enter RSS feed URL</string>
     <string name="wear_logged_out">Logged out</string>
     <string name="wear_syncing">Syncing…</string>
+    <string name="wear_open_on_phone">Open on Phone</string>
+    <string name="wear_open_on_phone_hint">Create account on phone</string>
+    <string name="wear_check_phone">Check your phone</string>
+    <string name="wear_phone_not_connected">Phone not connected</string>
+    <string name="wear_search_on_phone">Search on Phone</string>
+    <string name="wear_search_on_phone_hint">Find podcasts on phone</string>
+    <string name="wear_enter_username">Enter username</string>
+    <string name="wear_enter_password">Enter password</string>
 </resources>

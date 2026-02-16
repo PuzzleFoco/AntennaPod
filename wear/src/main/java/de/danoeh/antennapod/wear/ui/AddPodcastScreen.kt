@@ -2,6 +2,8 @@ package de.danoeh.antennapod.wear.ui
 
 import android.app.Application
 import android.app.RemoteInput
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +44,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.input.RemoteInputIntentHelper
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import de.danoeh.antennapod.model.feed.Feed
 import de.danoeh.antennapod.net.common.AntennapodHttpClient
 import de.danoeh.antennapod.storage.database.FeedDatabaseWriter
@@ -56,6 +59,7 @@ import org.xml.sax.Attributes
 import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 import java.io.StringReader
+import java.util.concurrent.Executors
 import javax.xml.parsers.SAXParserFactory
 
 class AddPodcastViewModel(application: Application) : AndroidViewModel(application) {
@@ -64,6 +68,24 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
 
     private val _resultMessage = MutableStateFlow<String?>(null)
     val resultMessage: StateFlow<String?> = _resultMessage
+
+    fun openSearchOnPhone() {
+        try {
+            val remoteActivityHelper = RemoteActivityHelper(
+                getApplication(), Executors.newSingleThreadExecutor()
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("https://gpodder.net/search")
+                addCategory(Intent.CATEGORY_BROWSABLE)
+            }
+            remoteActivityHelper.startRemoteActivity(intent)
+            _resultMessage.value = getApplication<Application>()
+                .getString(R.string.wear_check_phone)
+        } catch (e: Exception) {
+            _resultMessage.value = getApplication<Application>()
+                .getString(R.string.wear_phone_not_connected)
+        }
+    }
 
     fun subscribeToPodcast(url: String, onSuccess: () -> Unit) {
         if (url.isBlank()) return
@@ -232,6 +254,7 @@ fun AddPodcastScreen(
                     }
                 }
             } else {
+                // Enter URL on watch
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
@@ -269,6 +292,38 @@ fun AddPodcastScreen(
                         },
                         colors = ChipDefaults.chipColors(
                             backgroundColor = MaterialTheme.colors.primary
+                        )
+                    )
+                }
+
+                // Search on phone
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { addPodcastViewModel.openSearchOnPhone() },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_search_on_phone),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = stringResource(R.string.wear_search_on_phone_hint),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
                         )
                     )
                 }

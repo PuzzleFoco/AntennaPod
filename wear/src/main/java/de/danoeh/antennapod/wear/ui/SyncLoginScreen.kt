@@ -2,6 +2,8 @@ package de.danoeh.antennapod.wear.ui
 
 import android.app.Application
 import android.app.RemoteInput
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,9 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +32,7 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
@@ -42,6 +42,7 @@ import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.input.RemoteInputIntentHelper
+import androidx.wear.remote.interactions.RemoteActivityHelper
 import de.danoeh.antennapod.net.common.AntennapodHttpClient
 import de.danoeh.antennapod.net.sync.gpoddernet.GpodnetService
 import de.danoeh.antennapod.net.sync.nextcloud.NextcloudSyncService
@@ -55,6 +56,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.Executors
 
 class SyncLoginViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoggingIn = MutableStateFlow(false)
@@ -84,6 +86,28 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun getDeviceId(): String {
         return android.os.Build.MODEL.replace(" ", "") + "-wear"
+    }
+
+    fun openLoginOnPhone(provider: SynchronizationProvider) {
+        val url = when (provider) {
+            SynchronizationProvider.GPODDER_NET -> "https://gpodder.net/register/"
+            SynchronizationProvider.NEXTCLOUD_GPODDER -> "https://apps.nextcloud.com/apps/gpoddersync"
+        }
+        try {
+            val remoteActivityHelper = RemoteActivityHelper(
+                getApplication(), Executors.newSingleThreadExecutor()
+            )
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse(url)
+                addCategory(Intent.CATEGORY_BROWSABLE)
+            }
+            remoteActivityHelper.startRemoteActivity(intent)
+            _statusMessage.value = getApplication<Application>()
+                .getString(R.string.wear_check_phone)
+        } catch (e: Exception) {
+            _statusMessage.value = getApplication<Application>()
+                .getString(R.string.wear_phone_not_connected)
+        }
     }
 
     fun login(provider: SynchronizationProvider, onSuccess: () -> Unit) {
@@ -245,6 +269,37 @@ fun SyncLoginScreen(
                     }
                 }
             } else {
+                // Open on phone button
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { syncLoginViewModel.openLoginOnPhone(provider) },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_open_on_phone),
+                                maxLines = 1
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = stringResource(R.string.wear_open_on_phone_hint),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
+                        )
+                    )
+                }
+
                 // Server URL field
                 item {
                     Chip(
@@ -305,7 +360,7 @@ fun SyncLoginScreen(
                         },
                         secondaryLabel = {
                             Text(
-                                text = username.ifBlank { "Enter username" },
+                                text = username.ifBlank { stringResource(R.string.wear_enter_username) },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 color = if (username.isBlank()) MaterialTheme.colors.onSurfaceVariant
@@ -340,7 +395,7 @@ fun SyncLoginScreen(
                         },
                         secondaryLabel = {
                             Text(
-                                text = if (password.isBlank()) "Enter password"
+                                text = if (password.isBlank()) stringResource(R.string.wear_enter_password)
                                 else "••••••••",
                                 maxLines = 1,
                                 color = if (password.isBlank()) MaterialTheme.colors.onSurfaceVariant
