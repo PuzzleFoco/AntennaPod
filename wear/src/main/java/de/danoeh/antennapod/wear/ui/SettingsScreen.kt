@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
@@ -32,10 +33,10 @@ import androidx.wear.compose.material.PositionIndicator
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.material.ToggleChip
-import androidx.wear.compose.material.ToggleChipDefaults
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
+import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationQueue
+import de.danoeh.antennapod.storage.preferences.SynchronizationCredentials
 import de.danoeh.antennapod.storage.preferences.SynchronizationSettings
 import de.danoeh.antennapod.wear.R
 import kotlinx.coroutines.Dispatchers
@@ -69,8 +70,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             _isSyncing.value = true
             try {
-                val syncQueue = de.danoeh.antennapod.net.sync.service.SynchronizationQueueImpl(getApplication())
-                syncQueue.fullSync()
+                SynchronizationQueue.getInstance().fullSync()
             } catch (e: Exception) {
                 // Sync error handled by the service
             } finally {
@@ -78,10 +78,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    fun logout() {
+        viewModelScope.launch(Dispatchers.IO) {
+            SynchronizationCredentials.clear()
+            SynchronizationSettings.setSelectedSyncProvider(null)
+            SynchronizationSettings.resetTimestamps()
+            _syncProvider.value = null
+        }
+    }
 }
 
 @Composable
 fun SettingsScreen(
+    onNavigateToSyncLogin: (String) -> Unit,
     settingsViewModel: SettingsViewModel = viewModel()
 ) {
     val syncProvider by settingsViewModel.syncProvider.collectAsState()
@@ -118,58 +128,148 @@ fun SettingsScreen(
                 }
             }
 
-            item {
-                Chip(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { /* Show sync provider info */ },
-                    label = {
-                        Text(
-                            text = when {
-                                syncProvider?.contains("gpodder") == true -> stringResource(R.string.wear_sync_gpodder)
-                                syncProvider?.contains("nextcloud") == true -> stringResource(R.string.wear_sync_nextcloud)
-                                else -> stringResource(R.string.wear_sync_none)
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    secondaryLabel = {
-                        Text(
-                            text = if (syncProvider != null) "Connected" else "Set up via phone",
-                            maxLines = 1
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_sync),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    colors = ChipDefaults.chipColors(
-                        backgroundColor = MaterialTheme.colors.surface
-                    )
-                )
-            }
-
-            // Sync now button
             if (syncProvider != null) {
+                // Already connected - show provider info
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { },
+                        label = {
+                            Text(
+                                text = when {
+                                    syncProvider?.contains("GPODDER_NET") == true ->
+                                        stringResource(R.string.wear_sync_gpodder)
+                                    syncProvider?.contains("NEXTCLOUD") == true ->
+                                        stringResource(R.string.wear_sync_nextcloud)
+                                    else -> syncProvider ?: ""
+                                },
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        secondaryLabel = {
+                            val user = SynchronizationCredentials.getUsername()
+                            Text(
+                                text = if (user != null) "Connected as $user" else "Connected",
+                                maxLines = 1
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_sync),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
+                        )
+                    )
+                }
+
+                // Sync now button
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             settingsViewModel.triggerSync()
-                            Toast.makeText(context, R.string.wear_sync_now, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, R.string.wear_syncing, Toast.LENGTH_SHORT).show()
                         },
                         label = {
                             Text(
-                                text = if (isSyncing) stringResource(R.string.wear_loading)
-                                else stringResource(R.string.wear_sync_now)
+                                text = if (isSyncing) stringResource(R.string.wear_syncing)
+                                else stringResource(R.string.wear_sync_now),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         },
                         enabled = !isSyncing,
                         colors = ChipDefaults.chipColors(
                             backgroundColor = MaterialTheme.colors.primary
+                        )
+                    )
+                }
+
+                // Logout button
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            settingsViewModel.logout()
+                            Toast.makeText(context, R.string.wear_logged_out, Toast.LENGTH_SHORT).show()
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_sync_logout),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
+                        )
+                    )
+                }
+            } else {
+                // Not connected - show login options
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            onNavigateToSyncLogin("GPODDER_NET")
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_sync_gpodder),
+                                maxLines = 1
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = stringResource(R.string.wear_sync_login),
+                                maxLines = 1
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_sync),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
+                        )
+                    )
+                }
+
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            onNavigateToSyncLogin("NEXTCLOUD_GPODDER")
+                        },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_sync_nextcloud),
+                                maxLines = 1
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = stringResource(R.string.wear_sync_login),
+                                maxLines = 1
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_sync),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
                         )
                     )
                 }

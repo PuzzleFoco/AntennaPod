@@ -13,6 +13,8 @@ class WearScreensTest {
         assertEquals("downloads", WearScreens.DOWNLOADS)
         assertEquals("queue", WearScreens.QUEUE)
         assertEquals("settings", WearScreens.SETTINGS)
+        assertEquals("add_podcast", WearScreens.ADD_PODCAST)
+        assertEquals("sync_login/{provider}", WearScreens.SYNC_LOGIN)
     }
 
     @Test
@@ -25,5 +27,11 @@ class WearScreensTest {
         assertEquals("episodes/42", WearScreens.episodes(42))
         assertEquals("episodes/0", WearScreens.episodes(0))
         assertEquals("episodes/999", WearScreens.episodes(999))
+    }
+
+    @Test
+    fun testSyncLoginRoute() {
+        assertEquals("sync_login/GPODDER_NET", WearScreens.syncLogin("GPODDER_NET"))
+        assertEquals("sync_login/NEXTCLOUD_GPODDER", WearScreens.syncLogin("NEXTCLOUD_GPODDER"))
     }
 }

@@ -31,7 +31,8 @@ fun HomeScreen(
     onNavigateToNowPlaying: () -> Unit,
     onNavigateToDownloads: () -> Unit,
     onNavigateToQueue: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToAddPodcast: () -> Unit
 ) {
     val listState = rememberScalingLazyListState()
 
@@ -79,6 +80,13 @@ fun HomeScreen(
                     label = stringResource(R.string.wear_downloads),
                     iconRes = R.drawable.ic_download,
                     onClick = onNavigateToDownloads
+                )
+            }
+            item {
+                MenuChip(
+                    label = stringResource(R.string.wear_add_podcast),
+                    iconRes = R.drawable.ic_add,
+                    onClick = onNavigateToAddPodcast
                 )
             }
             item {

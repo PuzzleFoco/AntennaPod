@@ -71,6 +71,7 @@ class SubscriptionsViewModel(application: Application) : AndroidViewModel(applic
 @Composable
 fun SubscriptionsScreen(
     onFeedClick: (Long) -> Unit,
+    onNavigateToAddPodcast: () -> Unit,
     subscriptionsViewModel: SubscriptionsViewModel = viewModel()
 ) {
     val feeds by subscriptionsViewModel.feeds.collectAsState()
@@ -106,6 +107,15 @@ fun SubscriptionsScreen(
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.body2,
                     modifier = Modifier.padding(16.dp)
+                )
+                Chip(
+                    onClick = onNavigateToAddPodcast,
+                    label = {
+                        Text(text = stringResource(R.string.wear_add_podcast))
+                    },
+                    colors = ChipDefaults.chipColors(
+                        backgroundColor = MaterialTheme.colors.primary
+                    )
                 )
             }
         } else {

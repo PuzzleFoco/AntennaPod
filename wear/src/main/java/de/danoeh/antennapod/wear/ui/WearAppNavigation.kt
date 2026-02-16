@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationProvider
 
 object WearScreens {
     const val HOME = "home"
@@ -13,8 +14,11 @@ object WearScreens {
     const val DOWNLOADS = "downloads"
     const val QUEUE = "queue"
     const val SETTINGS = "settings"
+    const val ADD_PODCAST = "add_podcast"
+    const val SYNC_LOGIN = "sync_login/{provider}"
 
     fun episodes(feedId: Long): String = "episodes/$feedId"
+    fun syncLogin(provider: String): String = "sync_login/$provider"
 }
 
 @Composable
@@ -42,6 +46,9 @@ fun WearAppNavigation() {
                     },
                     onNavigateToSettings = {
                         navController.navigate(WearScreens.SETTINGS)
+                    },
+                    onNavigateToAddPodcast = {
+                        navController.navigate(WearScreens.ADD_PODCAST)
                     }
                 )
             }
@@ -49,6 +56,9 @@ fun WearAppNavigation() {
                 SubscriptionsScreen(
                     onFeedClick = { feedId ->
                         navController.navigate(WearScreens.episodes(feedId))
+                    },
+                    onNavigateToAddPodcast = {
+                        navController.navigate(WearScreens.ADD_PODCAST)
                     }
                 )
             }
@@ -79,7 +89,29 @@ fun WearAppNavigation() {
                 )
             }
             composable(WearScreens.SETTINGS) {
-                SettingsScreen()
+                SettingsScreen(
+                    onNavigateToSyncLogin = { provider ->
+                        navController.navigate(WearScreens.syncLogin(provider))
+                    }
+                )
+            }
+            composable(WearScreens.ADD_PODCAST) {
+                AddPodcastScreen(
+                    onSubscribed = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(WearScreens.SYNC_LOGIN) { backStackEntry ->
+                val providerKey = backStackEntry.arguments?.getString("provider") ?: "GPODDER_NET"
+                val provider = SynchronizationProvider.fromIdentifier(providerKey)
+                    ?: SynchronizationProvider.GPODDER_NET
+                SyncLoginScreen(
+                    provider = provider,
+                    onLoginSuccess = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

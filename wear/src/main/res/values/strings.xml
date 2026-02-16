@@ -12,7 +12,7 @@
     <string name="wear_sync_now">Sync Now</string>
     <string name="wear_sync_success">Sync complete</string>
     <string name="wear_sync_error">Sync failed</string>
-    <string name="wear_no_subscriptions">No subscriptions yet.\nSync or add a podcast URL.</string>
+    <string name="wear_no_subscriptions">No subscriptions yet.\nAdd a podcast or set up sync.</string>
     <string name="wear_no_episodes">No episodes</string>
     <string name="wear_no_downloads">No downloaded episodes</string>
     <string name="wear_download">Download</string>
@@ -33,4 +33,22 @@
     <string name="wear_about">About</string>
     <string name="wear_version">Version %s</string>
     <string name="wear_playback_speed">Playback Speed</string>
+    <string name="wear_sync_login">Log in</string>
+    <string name="wear_sync_logout">Log out</string>
+    <string name="wear_sync_provider">Sync Provider</string>
+    <string name="wear_sync_host">Server URL</string>
+    <string name="wear_sync_username">Username</string>
+    <string name="wear_sync_password">Password</string>
+    <string name="wear_sync_device_id">Device ID</string>
+    <string name="wear_sync_logging_in">Logging in…</string>
+    <string name="wear_sync_login_success">Login successful!</string>
+    <string name="wear_sync_login_error">Login failed: %s</string>
+    <string name="wear_sync_select_provider">Select sync provider</string>
+    <string name="wear_podcast_url">Podcast URL</string>
+    <string name="wear_subscribing">Subscribing…</string>
+    <string name="wear_subscribe_success">Subscribed!</string>
+    <string name="wear_subscribe_error">Subscribe failed: %s</string>
+    <string name="wear_add_podcast_hint">Enter RSS feed URL</string>
+    <string name="wear_logged_out">Logged out</string>
+    <string name="wear_syncing">Syncing…</string>
 </resources>
