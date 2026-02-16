@@ -88,7 +88,7 @@ fun SubscriptionsScreen(
     // Periodically reload feeds to pick up sync results from background WorkManager
     LaunchedEffect(Unit) {
         while (true) {
-            delay(5000)
+            delay(30000)
             subscriptionsViewModel.loadFeeds()
         }
     }

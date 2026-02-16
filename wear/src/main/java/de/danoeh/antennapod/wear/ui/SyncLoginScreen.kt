@@ -93,6 +93,16 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
         return android.os.Build.MODEL.replace(" ", "") + "-wear"
     }
 
+    private fun saveSubscriptionChanges(feedUrls: List<String>) {
+        for (feedUrl in feedUrls) {
+            if (!feedUrl.startsWith("http")) continue
+            val feed = Feed(feedUrl, null)
+            feed.title = feedUrl
+            feed.state = Feed.STATE_SUBSCRIBED
+            FeedDatabaseWriter.updateFeed(getApplication(), feed, false)
+        }
+    }
+
     fun openLoginOnPhone(provider: SynchronizationProvider) {
         val url = when (provider) {
             SynchronizationProvider.GPODDER_NET -> "https://gpodder.net/register/"
@@ -161,13 +171,7 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                             // Verify connection by fetching subscriptions and save to DB
                             try {
                                 val changes = service.getSubscriptionChanges(0)
-                                for (feedUrl in changes.added) {
-                                    if (!feedUrl.startsWith("http")) continue
-                                    val feed = Feed(feedUrl, null)
-                                    feed.title = feedUrl
-                                    feed.state = Feed.STATE_SUBSCRIBED
-                                    FeedDatabaseWriter.updateFeed(getApplication(), feed, false)
-                                }
+                                saveSubscriptionChanges(changes.added)
                             } catch (e: Exception) {
                                 Log.w("SyncLogin", "Could not fetch subscriptions: ${e.message}")
                             }
@@ -180,17 +184,10 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                                 AntennapodHttpClient.getHttpClient(),
                                 hostUrl, _username.value, _password.value
                             )
-                            // NextcloudSyncService.login() is a no-op, so we test
-                            // the connection by fetching subscriptions directly
+                            // Verify connection by fetching subscriptions
+                            // (NextcloudSyncService.login() performs no operation)
                             val changes = service.getSubscriptionChanges(0)
-                            // Save fetched subscriptions to local DB
-                            for (feedUrl in changes.added) {
-                                if (!feedUrl.startsWith("http")) continue
-                                val feed = Feed(feedUrl, null)
-                                feed.title = feedUrl
-                                feed.state = Feed.STATE_SUBSCRIBED
-                                FeedDatabaseWriter.updateFeed(getApplication(), feed, false)
-                            }
+                            saveSubscriptionChanges(changes.added)
                         }
                     }
 

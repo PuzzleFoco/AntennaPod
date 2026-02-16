@@ -101,11 +101,14 @@ class WearFeedUpdateWorker(
         val request = Request.Builder().url(feed.downloadUrl!!).build()
         val response = client.newCall(request).execute()
         try {
-            if (!response.isSuccessful) return
+            if (!response.isSuccessful) {
+                Log.w(TAG, "Feed download failed: ${feed.downloadUrl} HTTP ${response.code}")
+                return
+            }
             val body = response.body?.string() ?: return
 
             // Write RSS XML to a temp file for the FeedHandler parser
-            val tempFile = File.createTempFile("feed_", ".xml", appContext.cacheDir)
+            val tempFile = File.createTempFile("wear_feed_", ".xml", appContext.cacheDir)
             try {
                 tempFile.writeText(body)
 
