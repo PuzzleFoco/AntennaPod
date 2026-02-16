@@ -32,6 +32,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
+import de.danoeh.antennapod.net.download.serviceinterface.FeedUpdateManager
 import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationQueue
 import de.danoeh.antennapod.storage.preferences.SynchronizationCredentials
 import de.danoeh.antennapod.storage.preferences.SynchronizationSettings
@@ -68,6 +69,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _isSyncing.value = true
             try {
                 SynchronizationQueue.getInstance().fullSync()
+                // Also trigger feed refresh to download RSS data
+                FeedUpdateManager.getInstance()?.runOnce(getApplication())
             } catch (e: Exception) {
                 // Sync error handled by the service
             } finally {

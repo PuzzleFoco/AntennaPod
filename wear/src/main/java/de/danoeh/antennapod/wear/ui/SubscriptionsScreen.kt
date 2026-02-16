@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -38,6 +39,7 @@ import de.danoeh.antennapod.model.feed.Feed
 import de.danoeh.antennapod.storage.database.DBReader
 import de.danoeh.antennapod.wear.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -77,6 +79,19 @@ fun SubscriptionsScreen(
     val feeds by subscriptionsViewModel.feeds.collectAsState()
     val isLoading by subscriptionsViewModel.isLoading.collectAsState()
     val listState = rememberScalingLazyListState()
+
+    // Reload feeds every time this screen becomes visible (e.g. after login/sync)
+    LaunchedEffect(Unit) {
+        subscriptionsViewModel.loadFeeds()
+    }
+
+    // Periodically reload feeds to pick up sync results from background WorkManager
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(5000)
+            subscriptionsViewModel.loadFeeds()
+        }
+    }
 
     Scaffold(
         timeText = { TimeText() },

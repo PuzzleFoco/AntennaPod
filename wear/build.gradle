@@ -100,6 +100,7 @@ dependencies {
     implementation project(':net:sync:service')
     implementation project(':net:ssl')
     implementation project(':net:download:service-interface')
+    implementation project(':parser:feed')
     implementation project(':playback:base')
     implementation project(':ui:i18n')
     implementation project(':ui:notifications')
@@ -136,6 +137,9 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
     implementation "org.apache.commons:commons-lang3:$commonslangVersion"
     implementation "commons-io:commons-io:$commonsioVersion"
+
+    // WorkManager (for feed refresh worker)
+    implementation "androidx.work:work-runtime:$workManagerVersion"
 
     // Reactive
     implementation "io.reactivex.rxjava3:rxandroid:$rxAndroidVersion"

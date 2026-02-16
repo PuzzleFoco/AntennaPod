@@ -4,7 +4,7 @@ import android.app.Application
 import android.app.RemoteInput
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -43,11 +43,14 @@ import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
 import androidx.wear.input.RemoteInputIntentHelper
 import androidx.wear.remote.interactions.RemoteActivityHelper
+import de.danoeh.antennapod.model.feed.Feed
 import de.danoeh.antennapod.net.common.AntennapodHttpClient
+import de.danoeh.antennapod.net.download.serviceinterface.FeedUpdateManager
 import de.danoeh.antennapod.net.sync.gpoddernet.GpodnetService
 import de.danoeh.antennapod.net.sync.nextcloud.NextcloudSyncService
 import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationProvider
 import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationQueue
+import de.danoeh.antennapod.storage.database.FeedDatabaseWriter
 import de.danoeh.antennapod.storage.preferences.SynchronizationCredentials
 import de.danoeh.antennapod.storage.preferences.SynchronizationSettings
 import de.danoeh.antennapod.wear.R
@@ -96,11 +99,12 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
             SynchronizationProvider.NEXTCLOUD_GPODDER -> {
                 val hostValue = _host.value.trim()
                 if (hostValue.isNotBlank()) {
-                    if (!hostValue.startsWith("http://") && !hostValue.startsWith("https://")) {
+                    val baseUrl = if (!hostValue.startsWith("http://") && !hostValue.startsWith("https://")) {
                         "https://$hostValue"
                     } else {
                         hostValue
                     }
+                    baseUrl.trimEnd('/') + "/login"
                 } else {
                     "https://nextcloud.com/install/"
                 }
@@ -154,6 +158,19 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                             } catch (e: Exception) {
                                 // Device may already exist, ignore
                             }
+                            // Verify connection by fetching subscriptions and save to DB
+                            try {
+                                val changes = service.getSubscriptionChanges(0)
+                                for (feedUrl in changes.added) {
+                                    if (!feedUrl.startsWith("http")) continue
+                                    val feed = Feed(feedUrl, null)
+                                    feed.title = feedUrl
+                                    feed.state = Feed.STATE_SUBSCRIBED
+                                    FeedDatabaseWriter.updateFeed(getApplication(), feed, false)
+                                }
+                            } catch (e: Exception) {
+                                Log.w("SyncLogin", "Could not fetch subscriptions: ${e.message}")
+                            }
                         }
                         SynchronizationProvider.NEXTCLOUD_GPODDER -> {
                             if (hostUrl.isBlank()) {
@@ -163,7 +180,17 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                                 AntennapodHttpClient.getHttpClient(),
                                 hostUrl, _username.value, _password.value
                             )
-                            service.login()
+                            // NextcloudSyncService.login() is a no-op, so we test
+                            // the connection by fetching subscriptions directly
+                            val changes = service.getSubscriptionChanges(0)
+                            // Save fetched subscriptions to local DB
+                            for (feedUrl in changes.added) {
+                                if (!feedUrl.startsWith("http")) continue
+                                val feed = Feed(feedUrl, null)
+                                feed.title = feedUrl
+                                feed.state = Feed.STATE_SUBSCRIBED
+                                FeedDatabaseWriter.updateFeed(getApplication(), feed, false)
+                            }
                         }
                     }
 
@@ -178,7 +205,14 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                 _statusMessage.value = getApplication<Application>()
                     .getString(R.string.wear_sync_login_success)
 
-                // Trigger initial sync
+                // Trigger feed refresh to download full RSS data (titles, episodes)
+                try {
+                    FeedUpdateManager.getInstance()?.runOnce(getApplication())
+                } catch (e: Exception) {
+                    Log.w("SyncLogin", "Feed refresh failed: ${e.message}")
+                }
+
+                // Trigger background sync for episode actions
                 try {
                     SynchronizationQueue.getInstance().fullSync()
                 } catch (e: Exception) {
