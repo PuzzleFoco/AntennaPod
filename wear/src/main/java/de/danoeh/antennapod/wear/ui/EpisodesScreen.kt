@@ -3,16 +3,25 @@ package de.danoeh.antennapod.wear.ui
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +40,8 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
@@ -98,6 +109,11 @@ class EpisodesViewModel(application: Application) : AndroidViewModel(application
                 .build()
             controller.setMediaItem(mediaItem)
             controller.prepare()
+            // Seek to synced position from gpodder/nextcloud if available
+            val savedPosition = media.position
+            if (savedPosition > 0 && savedPosition < media.duration) {
+                controller.seekTo(savedPosition.toLong())
+            }
             controller.play()
         }, MoreExecutors.directExecutor())
     }
@@ -114,9 +130,15 @@ fun EpisodesScreen(
     val isLoading by episodesViewModel.isLoading.collectAsState()
     val listState = rememberScalingLazyListState()
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
     androidx.compose.runtime.LaunchedEffect(feedId) {
         episodesViewModel.loadEpisodes(feedId)
+    }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 
     Scaffold(
@@ -146,7 +168,14 @@ fun EpisodesScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onRotaryScrollEvent {
+                        coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+                        true
+                    }
+                    .focusRequester(focusRequester)
+                    .focusable(),
                 state = listState
             ) {
                 item {
@@ -176,6 +205,7 @@ fun EpisodesScreen(
 @Composable
 fun EpisodeChip(episode: FeedItem, onClick: () -> Unit) {
     val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
+    val media = episode.media
 
     Chip(
         modifier = Modifier.fillMaxWidth(),
@@ -188,24 +218,50 @@ fun EpisodeChip(episode: FeedItem, onClick: () -> Unit) {
             )
         },
         secondaryLabel = {
-            val parts = mutableListOf<String>()
-            episode.pubDate?.let { parts.add(dateFormat.format(it)) }
-            episode.media?.let { media ->
-                if (media.duration > 0) {
+            Column {
+                val parts = mutableListOf<String>()
+                episode.pubDate?.let { parts.add(dateFormat.format(it)) }
+                if (media != null && media.duration > 0) {
                     val minutes = media.duration / 60000
                     parts.add("${minutes}min")
                 }
-            }
-            if (parts.isNotEmpty()) {
-                Text(
-                    text = parts.joinToString(" · "),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // Show played state
+                if (episode.isPlayed) {
+                    parts.add("✓ Played")
+                } else if (media != null && media.position > 0 && media.duration > 0) {
+                    val remainingMin = (media.duration - media.position) / 60000
+                    parts.add("${remainingMin}min left")
+                }
+                if (parts.isNotEmpty()) {
+                    Text(
+                        text = parts.joinToString(" · "),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                // Show progress bar if partially played
+                if (media != null && media.position > 0 && media.duration > 0 && !episode.isPlayed) {
+                    val playProgress = media.position.toFloat() / media.duration.toFloat()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp)
+                            .height(3.dp)
+                            .background(MaterialTheme.colors.surface)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(playProgress)
+                                .height(3.dp)
+                                .background(MaterialTheme.colors.primary)
+                        )
+                    }
+                }
             }
         },
         colors = ChipDefaults.chipColors(
-            backgroundColor = MaterialTheme.colors.surface
+            backgroundColor = if (episode.isPlayed) MaterialTheme.colors.surface.copy(alpha = 0.5f)
+            else MaterialTheme.colors.surface
         )
     )
 }

@@ -61,5 +61,15 @@
     <string name="wear_search_on_phone_hint">Find podcasts on phone</string>
     <string name="wear_enter_username">Tap to enter on phone</string>
     <string name="wear_enter_password">Tap to enter on phone</string>
+    <string name="wear_enter_credentials">Please enter username and password</string>
     <string name="wear_nextcloud_host_hint">cloud.example.com</string>
+    <!-- Nextcloud Login v2 strings -->
+    <string name="wear_nc_login_v2">Login via phone browser</string>
+    <string name="wear_nc_login_button">Login via Browser</string>
+    <string name="wear_nc_enter_server">Please enter your Nextcloud server URL</string>
+    <string name="wear_nc_connecting">Connecting…</string>
+    <string name="wear_nc_waiting">Log in on your phone.\nWaiting for authentication…</string>
+    <string name="wear_nc_check_phone">Log in on your phone browser</string>
+    <string name="wear_nc_login_browser">Log in in the browser</string>
+    <string name="wear_nc_timeout">Login timed out. Please try again.</string>
 </resources>

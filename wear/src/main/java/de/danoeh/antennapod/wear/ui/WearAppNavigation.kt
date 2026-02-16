@@ -16,6 +16,7 @@ object WearScreens {
     const val SETTINGS = "settings"
     const val ADD_PODCAST = "add_podcast"
     const val SYNC_LOGIN = "sync_login/{provider}"
+    const val NEXTCLOUD_LOGIN = "nextcloud_login"
 
     fun episodes(feedId: Long): String = "episodes/$feedId"
     fun syncLogin(provider: String): String = "sync_login/$provider"
@@ -92,6 +93,9 @@ fun WearAppNavigation() {
                 SettingsScreen(
                     onNavigateToSyncLogin = { provider ->
                         navController.navigate(WearScreens.syncLogin(provider))
+                    },
+                    onNavigateToNextcloudLogin = {
+                        navController.navigate(WearScreens.NEXTCLOUD_LOGIN)
                     }
                 )
             }
@@ -108,6 +112,13 @@ fun WearAppNavigation() {
                     ?: SynchronizationProvider.GPODDER_NET
                 SyncLoginScreen(
                     provider = provider,
+                    onLoginSuccess = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(WearScreens.NEXTCLOUD_LOGIN) {
+                NextcloudLoginScreen(
                     onLoginSuccess = {
                         navController.popBackStack()
                     }

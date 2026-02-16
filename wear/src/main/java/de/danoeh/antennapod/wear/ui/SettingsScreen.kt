@@ -2,6 +2,7 @@ package de.danoeh.antennapod.wear.ui
 
 import android.app.Application
 import android.widget.Toast
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -9,7 +10,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -69,7 +75,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _isSyncing.value = true
             try {
                 SynchronizationQueue.getInstance().fullSync()
-                // Also trigger feed refresh to download RSS data
                 FeedUpdateManager.getInstance()?.runOnce(getApplication())
             } catch (e: Exception) {
                 // Sync error handled by the service
@@ -92,16 +97,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 @Composable
 fun SettingsScreen(
     onNavigateToSyncLogin: (String) -> Unit,
+    onNavigateToNextcloudLogin: () -> Unit,
     settingsViewModel: SettingsViewModel = viewModel()
 ) {
     val syncProvider by settingsViewModel.syncProvider.collectAsState()
     val isSyncing by settingsViewModel.isSyncing.collectAsState()
     val listState = rememberScalingLazyListState()
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
-    // Reload sync settings every time this screen is composed (e.g. after returning from login)
     LaunchedEffect(Unit) {
         settingsViewModel.loadSyncSettings()
+        focusRequester.requestFocus()
     }
 
     Scaffold(
@@ -110,7 +118,14 @@ fun SettingsScreen(
         positionIndicator = { PositionIndicator(scalingLazyListState = listState) }
     ) {
         ScalingLazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .onRotaryScrollEvent {
+                    coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+                    true
+                }
+                .focusRequester(focusRequester)
+                .focusable(),
             state = listState
         ) {
             item {
@@ -134,7 +149,7 @@ fun SettingsScreen(
             }
 
             if (syncProvider != null) {
-                // Already connected - show provider info
+                // Already connected
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
@@ -172,7 +187,7 @@ fun SettingsScreen(
                     )
                 }
 
-                // Sync now button
+                // Sync now
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
@@ -195,7 +210,7 @@ fun SettingsScreen(
                     )
                 }
 
-                // Logout button
+                // Logout
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
@@ -251,9 +266,7 @@ fun SettingsScreen(
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            onNavigateToSyncLogin("NEXTCLOUD_GPODDER")
-                        },
+                        onClick = onNavigateToNextcloudLogin,
                         label = {
                             Text(
                                 text = stringResource(R.string.wear_sync_nextcloud),
@@ -262,7 +275,7 @@ fun SettingsScreen(
                         },
                         secondaryLabel = {
                             Text(
-                                text = stringResource(R.string.wear_sync_login),
+                                text = stringResource(R.string.wear_nc_login_v2),
                                 maxLines = 1
                             )
                         },

@@ -1,11 +1,11 @@
 package de.danoeh.antennapod.wear.ui
 
 import android.app.Application
-import android.app.RemoteInput
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,13 +13,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -82,8 +87,6 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
             _resultMessage.value = getApplication<Application>()
                 .getString(R.string.wear_check_phone)
         } catch (e: Exception) {
-            // RemoteActivityHelper requires Google Play Services; on F-Droid builds
-            // or when no phone is connected, fall back to showing the URL
             _resultMessage.value = getApplication<Application>()
                 .getString(R.string.wear_open_on_phone_fallback, "https://gpodder.net/search")
         }
@@ -106,7 +109,6 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
                     feed.title = feedUrl
                     feed.state = Feed.STATE_SUBSCRIBED
 
-                    // Try to download and parse the feed to get proper title and items
                     try {
                         val client = AntennapodHttpClient.getHttpClient()
                         val request = Request.Builder().url(feedUrl).build()
@@ -114,7 +116,6 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
                         if (response.isSuccessful) {
                             val body = response.body?.string()
                             if (body != null) {
-                                // Extract title using SAX parser
                                 val title = parseFeedTitle(body)
                                 if (title != null) {
                                     feed.title = title
@@ -211,11 +212,13 @@ fun AddPodcastScreen(
     var enteredUrl by remember { mutableStateOf("") }
     val listState = rememberScalingLazyListState()
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
     val inputLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val results = RemoteInput.getResultsFromIntent(result.data)
+        val results = android.app.RemoteInput.getResultsFromIntent(result.data ?: return@rememberLauncherForActivityResult)
         val url = results?.getCharSequence(INPUT_KEY_URL)?.toString() ?: ""
         if (url.isNotBlank()) {
             enteredUrl = url
@@ -225,13 +228,24 @@ fun AddPodcastScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     Scaffold(
         timeText = { TimeText() },
         vignette = { Vignette(vignettePosition = VignettePosition.TopAndBottom) },
         positionIndicator = { PositionIndicator(scalingLazyListState = listState) }
     ) {
         ScalingLazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .onRotaryScrollEvent {
+                    coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+                    true
+                }
+                .focusRequester(focusRequester)
+                .focusable(),
             state = listState
         ) {
             item {
@@ -267,7 +281,7 @@ fun AddPodcastScreen(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             val remoteInputs = listOf(
-                                RemoteInput.Builder(INPUT_KEY_URL)
+                                android.app.RemoteInput.Builder(INPUT_KEY_URL)
                                     .setLabel(context.getString(R.string.wear_add_podcast_hint))
                                     .build()
                             )

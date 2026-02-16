@@ -3,16 +3,23 @@ package de.danoeh.antennapod.wear.ui
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -98,6 +105,11 @@ class DownloadsViewModel(application: Application) : AndroidViewModel(applicatio
                 .build()
             controller.setMediaItem(mediaItem)
             controller.prepare()
+            // Seek to synced position if available
+            val savedPosition = media.position
+            if (savedPosition > 0 && savedPosition < media.duration) {
+                controller.seekTo(savedPosition.toLong())
+            }
             controller.play()
         }, MoreExecutors.directExecutor())
     }
@@ -112,6 +124,12 @@ fun DownloadsScreen(
     val isLoading by downloadsViewModel.isLoading.collectAsState()
     val listState = rememberScalingLazyListState()
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     Scaffold(
         timeText = { TimeText() },
@@ -141,7 +159,14 @@ fun DownloadsScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onRotaryScrollEvent {
+                        coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+                        true
+                    }
+                    .focusRequester(focusRequester)
+                    .focusable(),
                 state = listState
             ) {
                 item {
@@ -153,29 +178,12 @@ fun DownloadsScreen(
                     }
                 }
                 items(episodes, key = { it.id }) { episode ->
-                    Chip(
-                        modifier = Modifier.fillMaxWidth(),
+                    EpisodeChip(
+                        episode = episode,
                         onClick = {
                             downloadsViewModel.playEpisode(context, episode)
                             onNavigateToNowPlaying()
-                        },
-                        label = {
-                            Text(
-                                text = episode.title ?: "",
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        secondaryLabel = {
-                            Text(
-                                text = episode.feed?.title ?: "",
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        },
-                        colors = ChipDefaults.chipColors(
-                            backgroundColor = MaterialTheme.colors.surface
-                        )
+                        }
                     )
                 }
             }

@@ -34,4 +34,9 @@ class WearScreensTest {
         assertEquals("sync_login/GPODDER_NET", WearScreens.syncLogin("GPODDER_NET"))
         assertEquals("sync_login/NEXTCLOUD_GPODDER", WearScreens.syncLogin("NEXTCLOUD_GPODDER"))
     }
+
+    @Test
+    fun testNextcloudLoginRoute() {
+        assertEquals("nextcloud_login", WearScreens.NEXTCLOUD_LOGIN)
+    }
 }

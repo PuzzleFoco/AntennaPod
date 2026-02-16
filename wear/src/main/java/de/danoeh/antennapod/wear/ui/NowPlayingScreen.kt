@@ -2,6 +2,8 @@ package de.danoeh.antennapod.wear.ui
 
 import android.content.ComponentName
 import android.content.Context
+import android.media.AudioManager
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -23,6 +26,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -61,6 +67,14 @@ fun NowPlayingScreen() {
     var progress by remember { mutableFloatStateOf(0f) }
     var hasMedia by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val focusRequester = remember { FocusRequester() }
+    val audioManager = remember {
+        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
 
     DisposableEffect(Unit) {
         val sessionToken = SessionToken(
@@ -122,7 +136,18 @@ fun NowPlayingScreen() {
     ) {
         if (!hasMedia) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onRotaryScrollEvent {
+                        val direction = if (it.verticalScrollPixels > 0) AudioManager.ADJUST_RAISE
+                            else AudioManager.ADJUST_LOWER
+                        audioManager.adjustStreamVolume(
+                            AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI
+                        )
+                        true
+                    }
+                    .focusRequester(focusRequester)
+                    .focusable(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -140,8 +165,21 @@ fun NowPlayingScreen() {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Progress indicator around the screen
-                Box(modifier = Modifier.fillMaxSize()) {
+                // Progress indicator around the screen + volume via crown
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .onRotaryScrollEvent {
+                            val direction = if (it.verticalScrollPixels > 0) AudioManager.ADJUST_RAISE
+                                else AudioManager.ADJUST_LOWER
+                            audioManager.adjustStreamVolume(
+                                AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI
+                            )
+                            true
+                        }
+                        .focusRequester(focusRequester)
+                        .focusable()
+                ) {
                     CircularProgressIndicator(
                         progress = progress,
                         modifier = Modifier.fillMaxSize(),

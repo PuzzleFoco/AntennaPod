@@ -1,12 +1,12 @@
 package de.danoeh.antennapod.wear.ui
 
 import android.app.Application
-import android.app.RemoteInput
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,8 +16,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -47,7 +52,6 @@ import de.danoeh.antennapod.model.feed.Feed
 import de.danoeh.antennapod.net.common.AntennapodHttpClient
 import de.danoeh.antennapod.net.download.serviceinterface.FeedUpdateManager
 import de.danoeh.antennapod.net.sync.gpoddernet.GpodnetService
-import de.danoeh.antennapod.net.sync.nextcloud.NextcloudSyncService
 import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationProvider
 import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationQueue
 import de.danoeh.antennapod.storage.database.FeedDatabaseWriter
@@ -83,63 +87,34 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
     fun setUsername(value: String) { _username.value = value }
     fun setPassword(value: String) { _password.value = value }
 
-    private fun getEffectiveHost(provider: SynchronizationProvider): String {
-        return _host.value.ifBlank {
-            if (provider == SynchronizationProvider.GPODDER_NET) DEFAULT_GPODDER_HOST else ""
-        }
+    private fun getEffectiveHost(): String {
+        return _host.value.ifBlank { DEFAULT_GPODDER_HOST }
     }
 
     private fun getDeviceId(): String {
         return android.os.Build.MODEL.replace(" ", "") + "-wear"
     }
 
-    private fun saveSubscriptionChanges(feedUrls: List<String>) {
-        for (feedUrl in feedUrls) {
-            if (!feedUrl.startsWith("http")) continue
-            val feed = Feed(feedUrl, null)
-            feed.title = feedUrl
-            feed.state = Feed.STATE_SUBSCRIBED
-            FeedDatabaseWriter.updateFeed(getApplication(), feed, false)
-        }
-    }
-
-    fun openLoginOnPhone(provider: SynchronizationProvider) {
-        val url = when (provider) {
-            SynchronizationProvider.GPODDER_NET -> "https://gpodder.net/register/"
-            SynchronizationProvider.NEXTCLOUD_GPODDER -> {
-                val hostValue = _host.value.trim()
-                if (hostValue.isNotBlank()) {
-                    val baseUrl = if (!hostValue.startsWith("http://") && !hostValue.startsWith("https://")) {
-                        "https://$hostValue"
-                    } else {
-                        hostValue
-                    }
-                    baseUrl.trimEnd('/') + "/login"
-                } else {
-                    "https://nextcloud.com/install/"
-                }
-            }
-        }
+    fun openLoginOnPhone() {
         try {
             val remoteActivityHelper = RemoteActivityHelper(getApplication(), executor)
             val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse(url)
+                data = Uri.parse("https://gpodder.net/register/")
                 addCategory(Intent.CATEGORY_BROWSABLE)
             }
             remoteActivityHelper.startRemoteActivity(intent)
             _statusMessage.value = getApplication<Application>()
                 .getString(R.string.wear_check_phone)
         } catch (e: Exception) {
-            // RemoteActivityHelper requires Google Play Services; on F-Droid builds
-            // or when no phone is connected, fall back to showing the URL
             _statusMessage.value = getApplication<Application>()
-                .getString(R.string.wear_open_on_phone_fallback, url)
+                .getString(R.string.wear_open_on_phone_fallback, "https://gpodder.net/register/")
         }
     }
 
-    fun login(provider: SynchronizationProvider, onSuccess: () -> Unit) {
+    fun login(onSuccess: () -> Unit) {
         if (_username.value.isBlank() || _password.value.isBlank()) {
-            _statusMessage.value = "Please enter username and password"
+            _statusMessage.value = getApplication<Application>()
+                .getString(R.string.wear_enter_credentials)
             return
         }
 
@@ -148,47 +123,35 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
             _statusMessage.value = null
             try {
                 withContext(Dispatchers.IO) {
-                    val hostUrl = getEffectiveHost(provider)
+                    val hostUrl = getEffectiveHost()
                     val deviceId = getDeviceId()
 
-                    when (provider) {
-                        SynchronizationProvider.GPODDER_NET -> {
-                            val service = GpodnetService(
-                                AntennapodHttpClient.getHttpClient(),
-                                hostUrl, deviceId,
-                                _username.value, _password.value
-                            )
-                            service.login()
-                            // Try to configure the device
-                            try {
-                                service.configureDevice(
-                                    deviceId, "AntennaPod Wear",
-                                    de.danoeh.antennapod.net.sync.gpoddernet.model.GpodnetDevice.DeviceType.MOBILE
-                                )
-                            } catch (e: Exception) {
-                                // Device may already exist, ignore
-                            }
-                            // Verify connection by fetching subscriptions and save to DB
-                            try {
-                                val changes = service.getSubscriptionChanges(0)
-                                saveSubscriptionChanges(changes.added)
-                            } catch (e: Exception) {
-                                Log.w("SyncLogin", "Could not fetch subscriptions: ${e.message}")
-                            }
+                    val service = GpodnetService(
+                        AntennapodHttpClient.getHttpClient(),
+                        hostUrl, deviceId,
+                        _username.value, _password.value
+                    )
+                    service.login()
+                    try {
+                        service.configureDevice(
+                            deviceId, "AntennaPod Wear",
+                            de.danoeh.antennapod.net.sync.gpoddernet.model.GpodnetDevice.DeviceType.MOBILE
+                        )
+                    } catch (e: Exception) {
+                        // Device may already exist
+                    }
+                    // Fetch subscriptions
+                    try {
+                        val changes = service.getSubscriptionChanges(0)
+                        for (feedUrl in changes.added) {
+                            if (!feedUrl.startsWith("http")) continue
+                            val feed = Feed(feedUrl, null)
+                            feed.title = feedUrl
+                            feed.state = Feed.STATE_SUBSCRIBED
+                            FeedDatabaseWriter.updateFeed(getApplication(), feed, false)
                         }
-                        SynchronizationProvider.NEXTCLOUD_GPODDER -> {
-                            if (hostUrl.isBlank()) {
-                                throw Exception("Server URL is required for Nextcloud")
-                            }
-                            val service = NextcloudSyncService(
-                                AntennapodHttpClient.getHttpClient(),
-                                hostUrl, _username.value, _password.value
-                            )
-                            // Verify connection by fetching subscriptions
-                            // (NextcloudSyncService.login() performs no operation)
-                            val changes = service.getSubscriptionChanges(0)
-                            saveSubscriptionChanges(changes.added)
-                        }
+                    } catch (e: Exception) {
+                        Log.w("SyncLogin", "Could not fetch subscriptions: ${e.message}")
                     }
 
                     // Save credentials
@@ -196,25 +159,22 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
                     SynchronizationCredentials.setPassword(_password.value)
                     SynchronizationCredentials.setHosturl(hostUrl)
                     SynchronizationCredentials.setDeviceId(deviceId)
-                    SynchronizationSettings.setSelectedSyncProvider(provider.identifier)
+                    SynchronizationSettings.setSelectedSyncProvider(
+                        SynchronizationProvider.GPODDER_NET.identifier
+                    )
                 }
 
                 _statusMessage.value = getApplication<Application>()
                     .getString(R.string.wear_sync_login_success)
 
-                // Trigger feed refresh to download full RSS data (titles, episodes)
                 try {
                     FeedUpdateManager.getInstance()?.runOnce(getApplication())
                 } catch (e: Exception) {
                     Log.w("SyncLogin", "Feed refresh failed: ${e.message}")
                 }
-
-                // Trigger background sync for episode actions
                 try {
                     SynchronizationQueue.getInstance().fullSync()
-                } catch (e: Exception) {
-                    // Sync will happen later
-                }
+                } catch (e: Exception) { /* will sync later */ }
 
                 withContext(Dispatchers.Main) {
                     onSuccess()
@@ -239,6 +199,7 @@ private const val INPUT_KEY_HOST = "sync_host"
 private const val INPUT_KEY_USERNAME = "sync_username"
 private const val INPUT_KEY_PASSWORD = "sync_password"
 
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun SyncLoginScreen(
     provider: SynchronizationProvider,
@@ -252,11 +213,13 @@ fun SyncLoginScreen(
     val password by syncLoginViewModel.password.collectAsState()
     val listState = rememberScalingLazyListState()
     val context = LocalContext.current
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
     val hostLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val results = RemoteInput.getResultsFromIntent(result.data)
+        val results = android.app.RemoteInput.getResultsFromIntent(result.data ?: return@rememberLauncherForActivityResult)
         results?.getCharSequence(INPUT_KEY_HOST)?.toString()?.let {
             syncLoginViewModel.setHost(it)
         }
@@ -265,7 +228,7 @@ fun SyncLoginScreen(
     val usernameLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val results = RemoteInput.getResultsFromIntent(result.data)
+        val results = android.app.RemoteInput.getResultsFromIntent(result.data ?: return@rememberLauncherForActivityResult)
         results?.getCharSequence(INPUT_KEY_USERNAME)?.toString()?.let {
             syncLoginViewModel.setUsername(it)
         }
@@ -274,10 +237,14 @@ fun SyncLoginScreen(
     val passwordLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val results = RemoteInput.getResultsFromIntent(result.data)
+        val results = android.app.RemoteInput.getResultsFromIntent(result.data ?: return@rememberLauncherForActivityResult)
         results?.getCharSequence(INPUT_KEY_PASSWORD)?.toString()?.let {
             syncLoginViewModel.setPassword(it)
         }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
     }
 
     Scaffold(
@@ -286,15 +253,20 @@ fun SyncLoginScreen(
         positionIndicator = { PositionIndicator(scalingLazyListState = listState) }
     ) {
         ScalingLazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .onRotaryScrollEvent {
+                    coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+                    true
+                }
+                .focusRequester(focusRequester)
+                .focusable(),
             state = listState
         ) {
             item {
                 ListHeader {
                     Text(
-                        text = if (provider == SynchronizationProvider.GPODDER_NET)
-                            stringResource(R.string.wear_sync_gpodder)
-                        else stringResource(R.string.wear_sync_nextcloud),
+                        text = stringResource(R.string.wear_sync_gpodder),
                         style = MaterialTheme.typography.title3
                     )
                 }
@@ -318,13 +290,13 @@ fun SyncLoginScreen(
                     }
                 }
             } else {
-                // Server URL field (uses phone keyboard via RemoteInput)
+                // Server URL field
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             val remoteInputs = listOf(
-                                RemoteInput.Builder(INPUT_KEY_HOST)
+                                android.app.RemoteInput.Builder(INPUT_KEY_HOST)
                                     .setLabel(context.getString(R.string.wear_sync_host))
                                     .build()
                             )
@@ -340,11 +312,7 @@ fun SyncLoginScreen(
                         },
                         secondaryLabel = {
                             Text(
-                                text = host.ifBlank {
-                                    if (provider == SynchronizationProvider.GPODDER_NET)
-                                        DEFAULT_GPODDER_HOST
-                                    else stringResource(R.string.wear_nextcloud_host_hint)
-                                },
+                                text = host.ifBlank { DEFAULT_GPODDER_HOST },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 color = if (host.isBlank()) MaterialTheme.colors.onSurfaceVariant
@@ -364,13 +332,13 @@ fun SyncLoginScreen(
                     )
                 }
 
-                // Username field (uses phone keyboard via RemoteInput)
+                // Username field
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             val remoteInputs = listOf(
-                                RemoteInput.Builder(INPUT_KEY_USERNAME)
+                                android.app.RemoteInput.Builder(INPUT_KEY_USERNAME)
                                     .setLabel(context.getString(R.string.wear_sync_username))
                                     .build()
                             )
@@ -406,13 +374,13 @@ fun SyncLoginScreen(
                     )
                 }
 
-                // Password field (uses phone keyboard via RemoteInput)
+                // Password field
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             val remoteInputs = listOf(
-                                RemoteInput.Builder(INPUT_KEY_PASSWORD)
+                                android.app.RemoteInput.Builder(INPUT_KEY_PASSWORD)
                                     .setLabel(context.getString(R.string.wear_sync_password))
                                     .build()
                             )
@@ -453,7 +421,7 @@ fun SyncLoginScreen(
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = {
-                            syncLoginViewModel.login(provider) {
+                            syncLoginViewModel.login {
                                 onLoginSuccess()
                             }
                         },
@@ -471,11 +439,11 @@ fun SyncLoginScreen(
                     )
                 }
 
-                // Open on phone button (requires Google Play Services)
+                // Open on phone button
                 item {
                     Chip(
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { syncLoginViewModel.openLoginOnPhone(provider) },
+                        onClick = { syncLoginViewModel.openLoginOnPhone() },
                         label = {
                             Text(
                                 text = stringResource(R.string.wear_open_on_phone),
@@ -484,9 +452,7 @@ fun SyncLoginScreen(
                         },
                         secondaryLabel = {
                             Text(
-                                text = if (provider == SynchronizationProvider.NEXTCLOUD_GPODDER)
-                                    stringResource(R.string.wear_open_server_on_phone)
-                                else stringResource(R.string.wear_open_on_phone_hint),
+                                text = stringResource(R.string.wear_open_on_phone_hint),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )

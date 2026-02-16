@@ -1,19 +1,28 @@
 package de.danoeh.antennapod.wear.ui
 
 import android.app.Application
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,6 +36,7 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
@@ -35,6 +45,7 @@ import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.Vignette
 import androidx.wear.compose.material.VignettePosition
+import coil.compose.AsyncImage
 import de.danoeh.antennapod.model.feed.Feed
 import de.danoeh.antennapod.storage.database.DBReader
 import de.danoeh.antennapod.wear.R
@@ -79,13 +90,16 @@ fun SubscriptionsScreen(
     val feeds by subscriptionsViewModel.feeds.collectAsState()
     val isLoading by subscriptionsViewModel.isLoading.collectAsState()
     val listState = rememberScalingLazyListState()
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
 
-    // Reload feeds every time this screen becomes visible (e.g. after login/sync)
+    // Reload feeds every time this screen becomes visible
     LaunchedEffect(Unit) {
         subscriptionsViewModel.loadFeeds()
+        focusRequester.requestFocus()
     }
 
-    // Periodically reload feeds to pick up sync results from background WorkManager
+    // Periodically reload feeds to pick up sync results
     LaunchedEffect(Unit) {
         while (true) {
             delay(30000)
@@ -135,7 +149,14 @@ fun SubscriptionsScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .onRotaryScrollEvent {
+                        coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+                        true
+                    }
+                    .focusRequester(focusRequester)
+                    .focusable(),
                 state = listState
             ) {
                 item {
@@ -176,6 +197,25 @@ fun FeedChip(feed: Feed, onClick: () -> Unit) {
                     text = "$episodeCount episodes",
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
+        icon = {
+            val imageUrl = feed.imageUrl
+            if (!imageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = feed.title,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Icon(
+                    painter = painterResource(R.drawable.ic_podcast),
+                    contentDescription = feed.title,
+                    modifier = Modifier.size(32.dp)
                 )
             }
         },
