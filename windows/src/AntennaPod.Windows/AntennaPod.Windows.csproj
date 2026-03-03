@@ -12,6 +12,7 @@
     <WindowsSdkPackageVersion>10.0.22621.52</WindowsSdkPackageVersion>
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <EnableMsixTooling>true</EnableMsixTooling>
   </PropertyGroup>
 
   <ItemGroup>
