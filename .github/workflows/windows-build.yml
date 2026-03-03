@@ -1,0 +1,108 @@
+name: Windows App Build
+
+on:
+  push:
+    branches: [ develop ]
+    paths:
+      - 'windows/**'
+  pull_request:
+    branches: [ develop ]
+    paths:
+      - 'windows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore windows/tests/AntennaPod.Core.Tests/AntennaPod.Core.Tests.csproj
+
+      - name: Build test project
+        run: dotnet build windows/tests/AntennaPod.Core.Tests/AntennaPod.Core.Tests.csproj --no-restore
+
+      - name: Run tests
+        run: dotnet test windows/tests/AntennaPod.Core.Tests/AntennaPod.Core.Tests.csproj --no-build --verbosity normal
+
+  build:
+    name: Build Windows App
+    runs-on: windows-latest
+    needs: test
+    strategy:
+      matrix:
+        platform: [x64, ARM64]
+        configuration: [Release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore dependencies
+        run: dotnet restore windows/AntennaPod.Windows.sln -p:Platform=${{ matrix.platform }}
+
+      - name: Build
+        run: |
+          msbuild windows/AntennaPod.Windows.sln `
+            /p:Configuration=${{ matrix.configuration }} `
+            /p:Platform=${{ matrix.platform }} `
+            /p:AppxBundlePlatforms="${{ matrix.platform }}" `
+            /p:AppxPackageDir="$env:GITHUB_WORKSPACE/AppPackages/" `
+            /p:AppxBundle=Never `
+            /p:UapAppxPackageBuildMode=SideloadOnly `
+            /p:GenerateAppxPackageOnBuild=true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntennaPod-Windows-${{ matrix.platform }}-${{ matrix.configuration }}
+          path: AppPackages/
+          if-no-files-found: warn
+
+  publish:
+    name: Publish Self-Contained
+    runs-on: windows-latest
+    needs: test
+    strategy:
+      matrix:
+        runtime: [win-x64, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish self-contained
+        run: |
+          dotnet publish windows/src/AntennaPod.Windows/AntennaPod.Windows.csproj `
+            -c Release `
+            -r ${{ matrix.runtime }} `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o publish/${{ matrix.runtime }}
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntennaPod-Windows-${{ matrix.runtime }}-standalone
+          path: publish/${{ matrix.runtime }}/
+          if-no-files-found: warn

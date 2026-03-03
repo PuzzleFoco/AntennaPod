@@ -1,0 +1,17 @@
+<Application
+    x:Class="AntennaPod.Windows.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:AntennaPod.Windows">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- App-wide color overrides for brand consistency -->
+            <SolidColorBrush x:Key="AntennaPodAccentBrush" Color="#FF1B5E20" />
+            <SolidColorBrush x:Key="AntennaPodAccentLightBrush" Color="#FF4CAF50" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

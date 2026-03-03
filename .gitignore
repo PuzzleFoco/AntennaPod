@@ -45,3 +45,12 @@ libs
 gradle.properties
 *.keystore
 *.p12
+
+# Windows app build artifacts
+windows/**/bin/
+windows/**/obj/
+windows/**/*.user
+windows/**/*.suo
+windows/.vs/
+AppPackages/
+publish/

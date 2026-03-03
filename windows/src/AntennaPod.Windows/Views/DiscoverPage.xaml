@@ -1,0 +1,71 @@
+<Page
+    x:Class="AntennaPod.Windows.Views.DiscoverPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Enabled">
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Discover" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,16" />
+
+        <!-- Search bar -->
+        <AutoSuggestBox x:Name="SearchBox" Grid.Row="1"
+                        PlaceholderText="Search for podcasts by name or feed URL..."
+                        QueryIcon="Find"
+                        QuerySubmitted="SearchBox_QuerySubmitted"
+                        Margin="0,0,0,16" />
+
+        <!-- Search results -->
+        <GridView x:Name="ResultsGrid" Grid.Row="2" SelectionMode="None"
+                  IsItemClickEnabled="True" ItemClick="ResultsGrid_ItemClick">
+            <GridView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Width="200" Padding="8" Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="200" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" CornerRadius="8"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                            <Grid>
+                                <FontIcon Glyph="&#xE774;" FontSize="48" Opacity="0.3"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Image Source="{Binding ImageUrl}" Stretch="UniformToFill" />
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Grid.Row="1" Text="{Binding Title}"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}"
+                                   TextTrimming="CharacterEllipsis" MaxLines="2"
+                                   Margin="0,8,0,0" />
+
+                        <TextBlock Grid.Row="2" Text="{Binding Author}"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextTrimming="CharacterEllipsis" MaxLines="1" />
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+
+        <!-- Initial state -->
+        <StackPanel x:Name="InitialState" Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <FontIcon Glyph="&#xE721;" FontSize="48" Opacity="0.5" HorizontalAlignment="Center" Margin="0,0,0,16" />
+            <TextBlock Text="Search for podcasts" Style="{StaticResource SubtitleTextBlockStyle}"
+                       HorizontalAlignment="Center" Opacity="0.7" />
+            <TextBlock Text="Enter a podcast name or paste a feed URL to discover new shows"
+                       Style="{StaticResource BodyTextBlockStyle}" HorizontalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+
+        <ProgressRing x:Name="LoadingRing" Grid.Row="2" IsActive="False"
+                      HorizontalAlignment="Center" VerticalAlignment="Center" />
+    </Grid>
+</Page>
