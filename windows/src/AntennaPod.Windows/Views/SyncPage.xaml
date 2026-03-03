@@ -1,0 +1,126 @@
+<Page
+    x:Class="AntennaPod.Windows.Views.SyncPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Enabled">
+
+    <ScrollViewer Padding="24">
+        <StackPanel Spacing="4" MaxWidth="800" HorizontalAlignment="Left">
+            <TextBlock Text="Synchronization" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,8" />
+            <TextBlock Text="Sync your podcast subscriptions and listening progress across devices"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,0,0,16" />
+
+            <!-- Sync provider selection -->
+            <TextBlock Text="Sync Provider" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+
+            <RadioButtons x:Name="ProviderRadio" SelectionChanged="ProviderRadio_SelectionChanged">
+                <RadioButton Content="None (sync disabled)" Tag="none" />
+                <RadioButton Content="gPodder.net" Tag="gpodder" />
+                <RadioButton Content="Nextcloud gPodder" Tag="nextcloud" />
+            </RadioButtons>
+
+            <!-- gPodder.net settings -->
+            <StackPanel x:Name="GpodderSettings" Visibility="Collapsed" Spacing="4" Margin="0,16,0,0">
+                <TextBlock Text="gPodder.net Settings" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+
+                <Border CornerRadius="8" Padding="16"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        Margin="0,0,0,4">
+                    <StackPanel Spacing="12">
+                        <TextBox x:Name="GpodderServer" Header="Server URL"
+                                 PlaceholderText="https://gpodder.net" Text="https://gpodder.net" />
+                        <TextBox x:Name="GpodderUsername" Header="Username"
+                                 PlaceholderText="Enter your gPodder.net username" />
+                        <PasswordBox x:Name="GpodderPassword" Header="Password"
+                                     PlaceholderText="Enter your password" />
+                        <TextBox x:Name="GpodderDevice" Header="Device ID"
+                                 PlaceholderText="e.g., windows-desktop" />
+                    </StackPanel>
+                </Border>
+
+                <InfoBar x:Name="GpodderInfo" IsOpen="True" IsClosable="False" Severity="Informational"
+                         Title="gPodder.net"
+                         Message="Create a free account at gpodder.net to sync your podcasts across devices."
+                         Margin="0,8,0,0" />
+            </StackPanel>
+
+            <!-- Nextcloud settings -->
+            <StackPanel x:Name="NextcloudSettings" Visibility="Collapsed" Spacing="4" Margin="0,16,0,0">
+                <TextBlock Text="Nextcloud gPodder Settings" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+
+                <Border CornerRadius="8" Padding="16"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        Margin="0,0,0,4">
+                    <StackPanel Spacing="12">
+                        <TextBox x:Name="NextcloudServer" Header="Nextcloud Server URL"
+                                 PlaceholderText="https://your-nextcloud-server.com" />
+                        <TextBox x:Name="NextcloudUsername" Header="Username"
+                                 PlaceholderText="Enter your Nextcloud username" />
+                        <PasswordBox x:Name="NextcloudPassword" Header="Password"
+                                     PlaceholderText="Enter your password" />
+                    </StackPanel>
+                </Border>
+
+                <InfoBar x:Name="NextcloudInfo" IsOpen="True" IsClosable="False" Severity="Informational"
+                         Title="Nextcloud gPodder"
+                         Message="Make sure the gPodder Sync app is installed on your Nextcloud instance."
+                         Margin="0,8,0,0" />
+            </StackPanel>
+
+            <!-- Action buttons -->
+            <StackPanel x:Name="ActionButtons" Orientation="Horizontal" Spacing="8" Margin="0,16,0,0">
+                <Button x:Name="SaveButton" Style="{StaticResource AccentButtonStyle}"
+                        Click="SaveButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                        <TextBlock Text="Save Settings" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="SyncNowButton" Click="SyncNowButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE895;" FontSize="14" />
+                        <TextBlock Text="Sync Now" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="TestButton" Click="TestButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE916;" FontSize="14" />
+                        <TextBlock Text="Test Connection" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Sync status -->
+            <Border x:Name="SyncStatusCard" CornerRadius="8" Padding="16" Margin="0,16,0,0"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Visibility="Collapsed">
+                <StackPanel Spacing="8">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ProgressRing x:Name="SyncProgress" IsActive="False" Width="20" Height="20" />
+                        <TextBlock x:Name="SyncStatusText" Text="Ready to sync"
+                                   Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    </StackPanel>
+                    <TextBlock x:Name="SyncDetailText" Text=""
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Sync log -->
+            <TextBlock Text="Sync Log" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,24,0,8" />
+            <Border CornerRadius="8" Padding="16" MinHeight="120"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <TextBlock x:Name="SyncLog" Text="No sync activity yet."
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

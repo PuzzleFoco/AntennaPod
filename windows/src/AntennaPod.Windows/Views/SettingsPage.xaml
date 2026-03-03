@@ -1,0 +1,187 @@
+<Page
+    x:Class="AntennaPod.Windows.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    NavigationCacheMode="Enabled">
+
+    <ScrollViewer Padding="24">
+        <StackPanel Spacing="4" MaxWidth="800" HorizontalAlignment="Left">
+            <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" Margin="0,0,0,16" />
+
+            <!-- Playback settings -->
+            <TextBlock Text="Playback" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Skip silence" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Automatically skip silent parts of episodes"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" />
+                </Grid>
+            </Border>
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="200" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Playback speed" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Default speed for podcast playback"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <ComboBox Grid.Column="1" SelectedIndex="2" HorizontalAlignment="Right">
+                        <ComboBoxItem Content="0.5x" />
+                        <ComboBoxItem Content="0.75x" />
+                        <ComboBoxItem Content="1.0x (Normal)" />
+                        <ComboBoxItem Content="1.25x" />
+                        <ComboBoxItem Content="1.5x" />
+                        <ComboBoxItem Content="2.0x" />
+                    </ComboBox>
+                </Grid>
+            </Border>
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="200" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Skip back duration" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Seconds to skip when pressing back button"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <NumberBox Grid.Column="1" Value="10" Minimum="5" Maximum="60"
+                               SpinButtonPlacementMode="Compact" HorizontalAlignment="Right" />
+                </Grid>
+            </Border>
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="200" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Skip forward duration" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Seconds to skip when pressing forward button"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <NumberBox Grid.Column="1" Value="30" Minimum="5" Maximum="60"
+                               SpinButtonPlacementMode="Compact" HorizontalAlignment="Right" />
+                </Grid>
+            </Border>
+
+            <!-- Downloads settings -->
+            <TextBlock Text="Downloads" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,24,0,8" />
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Auto-download new episodes" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Download new episodes when feeds are updated"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" />
+                </Grid>
+            </Border>
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Auto-delete after playback" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Remove downloaded files after an episode is played"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" />
+                </Grid>
+            </Border>
+
+            <!-- Appearance -->
+            <TextBlock Text="Appearance" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,24,0,8" />
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                    Margin="0,0,0,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="200" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Theme" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Text="Choose light, dark, or system default theme"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <ComboBox Grid.Column="1" SelectedIndex="0" HorizontalAlignment="Right">
+                        <ComboBoxItem Content="System default" />
+                        <ComboBoxItem Content="Light" />
+                        <ComboBoxItem Content="Dark" />
+                    </ComboBox>
+                </Grid>
+            </Border>
+
+            <!-- About -->
+            <TextBlock Text="About" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,24,0,8" />
+
+            <Border CornerRadius="8" Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="AntennaPod for Windows" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock Text="Version 1.0.0"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                        An open-source podcast manager. Licensed under MIT License.
+                    </TextBlock>
+                    <HyperlinkButton Content="View on GitHub" NavigateUri="https://github.com/AntennaPod/AntennaPod"
+                                     Padding="0" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
