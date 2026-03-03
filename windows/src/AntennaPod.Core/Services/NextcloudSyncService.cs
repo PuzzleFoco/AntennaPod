@@ -9,6 +9,7 @@ public class NextcloudSyncService : ISyncService, IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly SyncCredentials _credentials;
+    private readonly bool _ownsHttpClient;
 
     public NextcloudSyncService(SyncCredentials credentials, HttpClient? httpClient = null)
     {
@@ -19,6 +20,7 @@ public class NextcloudSyncService : ISyncService, IDisposable
             throw new ArgumentException("Nextcloud server URL is required.", nameof(credentials));
         }
 
+        _ownsHttpClient = httpClient == null;
         _httpClient = httpClient ?? new HttpClient();
         _httpClient.BaseAddress = new Uri(credentials.BaseUrl.TrimEnd('/'));
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
@@ -97,6 +99,9 @@ public class NextcloudSyncService : ISyncService, IDisposable
 
     public void Dispose()
     {
-        _httpClient.Dispose();
+        if (_ownsHttpClient)
+        {
+            _httpClient.Dispose();
+        }
     }
 }

@@ -6,7 +6,10 @@ namespace AntennaPod.Core.Services;
 
 public class FeedParser
 {
-    private static readonly HttpClient SharedHttpClient = new();
+    private static readonly HttpClient SharedHttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(30)
+    };
 
     public async Task<Podcast> ParseFeedAsync(string feedUrl)
     {

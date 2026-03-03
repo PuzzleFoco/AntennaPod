@@ -7,8 +7,7 @@ public partial class App : Application
 {
     public static IAppDatabase Database { get; private set; } = null!;
     public static string AppDataPath { get; private set; } = null!;
-
-    private Window? _window;
+    public static Window? MainWindow { get; private set; }
 
     public App()
     {
@@ -28,7 +27,7 @@ public partial class App : Application
         Database = new AppDatabase(dbPath);
         await Database.InitializeAsync();
 
-        _window = new MainWindow();
-        _window.Activate();
+        MainWindow = new MainWindow();
+        MainWindow.Activate();
     }
 }

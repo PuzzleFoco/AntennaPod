@@ -10,6 +10,7 @@ public class GpodderSyncService : ISyncService, IDisposable
 {
     private readonly HttpClient _httpClient;
     private readonly SyncCredentials _credentials;
+    private readonly bool _ownsHttpClient;
     private const int MaxActionsPerRequest = 30;
 
     public GpodderSyncService(SyncCredentials credentials, HttpClient? httpClient = null)
@@ -20,8 +21,18 @@ public class GpodderSyncService : ISyncService, IDisposable
             ? "https://gpodder.net"
             : credentials.BaseUrl.TrimEnd('/');
 
-        var handler = new HttpClientHandler { CookieContainer = new CookieContainer() };
-        _httpClient = httpClient ?? new HttpClient(handler);
+        if (httpClient != null)
+        {
+            _httpClient = httpClient;
+            _ownsHttpClient = false;
+        }
+        else
+        {
+            var handler = new HttpClientHandler { CookieContainer = new CookieContainer() };
+            _httpClient = new HttpClient(handler);
+            _ownsHttpClient = true;
+        }
+
         _httpClient.BaseAddress = new Uri(baseUrl);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Basic",
@@ -131,6 +142,8 @@ public class GpodderSyncService : ISyncService, IDisposable
 
     public void Dispose()
     {
-        _httpClient.Dispose();
-    }
-}
+        if (_ownsHttpClient)
+        {
+            _httpClient.Dispose();
+        }
+    }}

@@ -9,6 +9,11 @@ public sealed partial class PodcastsPage : Page
 {
     private List<Podcast> _podcasts = new();
 
+    private static IntPtr GetMainWindowHandle()
+    {
+        return WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+    }
+
     public PodcastsPage()
     {
         this.InitializeComponent();
@@ -152,14 +157,7 @@ public sealed partial class PodcastsPage : Page
         picker.FileTypeFilter.Add(".opml");
         picker.FileTypeFilter.Add(".xml");
 
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.Current as App != null
-            ? (Application.Current as App) != null
-                ? ((MainWindow)((App)Application.Current).GetType().GetProperty("_window",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(Application.Current)!)
-                : null!
-            : null!);
-
-        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, GetMainWindowHandle());
 
         var file = await picker.PickSingleFileAsync();
         if (file != null)
@@ -193,14 +191,7 @@ public sealed partial class PodcastsPage : Page
         picker.FileTypeChoices.Add("OPML", new List<string> { ".opml" });
         picker.SuggestedFileName = "AntennaPod-Subscriptions";
 
-        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.Current as App != null
-            ? (Application.Current as App) != null
-                ? ((MainWindow)((App)Application.Current).GetType().GetProperty("_window",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?.GetValue(Application.Current)!)
-                : null!
-            : null!);
-
-        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, GetMainWindowHandle());
 
         var file = await picker.PickSaveFileAsync();
         if (file != null)
