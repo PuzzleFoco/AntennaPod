@@ -3,15 +3,20 @@ package de.danoeh.antennapod.wear.ui
 import android.app.Application
 import android.content.ComponentName
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +28,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,9 +43,12 @@ import androidx.media3.session.SessionToken
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Chip
 import androidx.wear.compose.material.ChipDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
+import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.ListHeader
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.PositionIndicator
@@ -53,6 +62,7 @@ import de.danoeh.antennapod.model.feed.Feed
 import de.danoeh.antennapod.model.feed.FeedItem
 import de.danoeh.antennapod.storage.database.DBReader
 import de.danoeh.antennapod.wear.R
+import de.danoeh.antennapod.wear.service.WearDownloadService
 import de.danoeh.antennapod.wear.service.WearPlaybackService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -116,6 +126,13 @@ class EpisodesViewModel(application: Application) : AndroidViewModel(application
             // The service owns the player; release our one-shot controller connection
             MediaController.releaseFuture(controllerFuture)
         }, MoreExecutors.directExecutor())
+    }
+
+    fun downloadEpisode(context: Context, episode: FeedItem) {
+        val media = episode.media ?: return
+        val url = media.downloadUrl ?: return
+        if (url.isBlank()) return
+        WearDownloadService.startDownload(context, url, episode.title ?: "", media.id)
     }
 }
 
@@ -189,13 +206,33 @@ fun EpisodesScreen(
                     }
                 }
                 items(episodes, key = { it.id }) { episode ->
-                    EpisodeChip(
-                        episode = episode,
-                        onClick = {
-                            episodesViewModel.playEpisode(context, episode)
-                            onNavigateToNowPlaying()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        EpisodeChip(
+                            episode = episode,
+                            onClick = {
+                                episodesViewModel.playEpisode(context, episode)
+                                onNavigateToNowPlaying()
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Button(
+                            onClick = {
+                                episodesViewModel.downloadEpisode(context, episode)
+                                Toast.makeText(context, R.string.wear_downloading, Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(34.dp),
+                            colors = ButtonDefaults.secondaryButtonColors()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_download),
+                                contentDescription = stringResource(R.string.wear_download),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
-                    )
+                    }
                 }
             }
         }
@@ -203,12 +240,12 @@ fun EpisodesScreen(
 }
 
 @Composable
-fun EpisodeChip(episode: FeedItem, onClick: () -> Unit) {
+fun EpisodeChip(episode: FeedItem, onClick: () -> Unit, modifier: Modifier = Modifier.fillMaxWidth()) {
     val dateFormat = SimpleDateFormat("MMM d", Locale.getDefault())
     val media = episode.media
 
     Chip(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         onClick = onClick,
         label = {
             Text(

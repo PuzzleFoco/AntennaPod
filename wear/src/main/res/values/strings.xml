@@ -19,6 +19,7 @@
     <string name="wear_downloading">Downloading…</string>
     <string name="wear_downloaded">Downloaded</string>
     <string name="wear_delete_download">Delete download</string>
+    <string name="wear_download_error">Download failed</string>
     <string name="wear_add_podcast">Add Podcast</string>
     <string name="wear_enter_url">Enter feed URL</string>
     <string name="wear_subscribe">Subscribe</string>
