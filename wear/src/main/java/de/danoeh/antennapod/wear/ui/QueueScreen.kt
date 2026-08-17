@@ -108,6 +108,7 @@ class QueueViewModel(application: Application) : AndroidViewModel(application) {
                 controller.seekTo(savedPosition.toLong())
             }
             controller.play()
+            MediaController.releaseFuture(controllerFuture)
         }, MoreExecutors.directExecutor())
     }
 }

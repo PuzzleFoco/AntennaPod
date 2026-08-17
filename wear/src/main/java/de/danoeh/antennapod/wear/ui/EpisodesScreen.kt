@@ -113,6 +113,8 @@ class EpisodesViewModel(application: Application) : AndroidViewModel(application
                 controller.seekTo(savedPosition.toLong())
             }
             controller.play()
+            // The service owns the player; release our one-shot controller connection
+            MediaController.releaseFuture(controllerFuture)
         }, MoreExecutors.directExecutor())
     }
 }

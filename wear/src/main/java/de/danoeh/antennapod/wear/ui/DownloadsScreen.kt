@@ -111,6 +111,7 @@ class DownloadsViewModel(application: Application) : AndroidViewModel(applicatio
                 controller.seekTo(savedPosition.toLong())
             }
             controller.play()
+            MediaController.releaseFuture(controllerFuture)
         }, MoreExecutors.directExecutor())
     }
 }
