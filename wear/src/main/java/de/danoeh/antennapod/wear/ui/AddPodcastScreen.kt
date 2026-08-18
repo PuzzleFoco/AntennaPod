@@ -52,6 +52,7 @@ import androidx.wear.input.RemoteInputIntentHelper
 import androidx.wear.remote.interactions.RemoteActivityHelper
 import de.danoeh.antennapod.model.feed.Feed
 import de.danoeh.antennapod.net.common.AntennapodHttpClient
+import de.danoeh.antennapod.net.download.serviceinterface.FeedUpdateManager
 import de.danoeh.antennapod.storage.database.FeedDatabaseWriter
 import de.danoeh.antennapod.wear.R
 import kotlinx.coroutines.Dispatchers
@@ -130,6 +131,14 @@ class AddPodcastViewModel(application: Application) : AndroidViewModel(applicati
                     FeedDatabaseWriter.updateFeed(
                         getApplication(), feed, false
                     )
+
+                    // Kick off a feed refresh so the episodes show up immediately
+                    // instead of only after the next sync.
+                    try {
+                        FeedUpdateManager.getInstance()?.runOnce(getApplication(), feed)
+                    } catch (e: Exception) {
+                        // Episodes can be (re)loaded via a later feed update
+                    }
                 }
 
                 _resultMessage.value = getApplication<Application>()
