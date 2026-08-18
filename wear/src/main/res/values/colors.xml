@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="wear_primary">#3D8BFF</color>
+    <color name="wear_primary_variant">#0078C2</color>
+    <color name="wear_on_primary">#FFFFFF</color>
+    <color name="wear_background">#000000</color>
+    <color name="wear_on_background">#FFFFFF</color>
+    <color name="wear_surface">#1A1A1A</color>
+    <color name="wear_on_surface">#FFFFFF</color>
+    <color name="wear_on_surface_variant">#B0B0B0</color>
+    <color name="wear_error">#CF6679</color>
+    <color name="wear_secondary">#16D0FF</color>
+</resources>
