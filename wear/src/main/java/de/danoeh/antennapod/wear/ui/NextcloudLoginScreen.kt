@@ -58,6 +58,7 @@ import de.danoeh.antennapod.storage.database.FeedDatabaseWriter
 import de.danoeh.antennapod.storage.preferences.SynchronizationCredentials
 import de.danoeh.antennapod.storage.preferences.SynchronizationSettings
 import de.danoeh.antennapod.wear.R
+import de.danoeh.antennapod.wear.phone.PhoneCredentialSync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,6 +91,12 @@ class NextcloudLoginViewModel(application: Application) : AndroidViewModel(appli
     private val executor = Executors.newSingleThreadExecutor()
 
     fun setHost(value: String) { _host.value = value }
+
+    fun fetchFromPhone() {
+        val ok = PhoneCredentialSync.request(getApplication())
+        _statusMessage.value = getApplication<Application>()
+            .getString(if (ok) R.string.wear_check_phone else R.string.wear_phone_unavailable)
+    }
 
     /**
      * Initiates Nextcloud Login v2:
@@ -380,6 +387,38 @@ fun NextcloudLoginScreen(
                                     overflow = TextOverflow.Ellipsis,
                                     color = if (host.isBlank()) MaterialTheme.colors.onSurfaceVariant
                                     else MaterialTheme.colors.onSurface
+                                )
+                            },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_phone),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            colors = ChipDefaults.chipColors(
+                                backgroundColor = MaterialTheme.colors.surface
+                            )
+                        )
+                    }
+
+                    // Fetch from phone
+                    item {
+                        Chip(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { viewModel.fetchFromPhone() },
+                            label = {
+                                Text(
+                                    text = stringResource(R.string.wear_fetch_from_phone),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
+                            secondaryLabel = {
+                                Text(
+                                    text = stringResource(R.string.wear_fetch_from_phone_hint),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             },
                             icon = {

@@ -141,6 +141,9 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:$commonslangVersion"
     implementation "commons-io:commons-io:$commonsioVersion"
 
+    // Smartphone credential adoption via the Wearable Data Layer (Play flavor only)
+    playImplementation "com.google.android.gms:play-services-wearable:18.1.0"
+
     // WorkManager (for feed refresh worker)
     implementation "androidx.work:work-runtime:$workManagerVersion"
 

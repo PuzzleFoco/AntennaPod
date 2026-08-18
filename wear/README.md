@@ -75,6 +75,19 @@ The Wear OS app supports sync configuration via:
 
 Sync credentials can be configured from the phone app and shared via the sync settings storage.
 
+### Login via Smartphone
+
+Instead of typing on the small watch screen you can adopt the sync settings from your
+paired phone (**Play build** only, uses the Wearable Data Layer):
+
+1. In the watch's **gpodder.net** or **Nextcloud** login screen tap **"Fetch from phone"**.
+2. The paired AntennaPod app automatically sends its configured server, username and
+   password/app-key to the watch, which stores them and starts a feed refresh + sync.
+
+On the **free / F-Droid** build (no Google Play Services) this falls back to entering the
+details on the watch or confirming in the phone browser (Nextcloud Login v2, gpodder.net
+"Open on Phone").
+
 ## Technical Details
 
 - **Min SDK**: 26 (Wear OS 2.0+)

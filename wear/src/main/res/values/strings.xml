@@ -55,6 +55,10 @@
     <string name="wear_open_on_phone">Open on Phone</string>
     <string name="wear_open_on_phone_hint">Create account on phone</string>
     <string name="wear_open_on_phone_fallback">Visit on phone: %s</string>
+    <string name="wear_fetch_from_phone">Fetch from phone</string>
+    <string name="wear_fetch_from_phone_hint">Use the credentials set up in the Android app</string>
+    <string name="wear_phone_imported">Sync settings imported from phone</string>
+    <string name="wear_phone_unavailable">No paired phone detected. Please enter the details on this watch or on your phone.</string>
     <string name="wear_open_server_on_phone">Open your server on phone</string>
     <string name="wear_check_phone">Check your phone</string>
     <string name="wear_phone_not_connected">Phone not connected</string>

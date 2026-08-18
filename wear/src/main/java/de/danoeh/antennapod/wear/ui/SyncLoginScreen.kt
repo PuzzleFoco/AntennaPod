@@ -58,6 +58,7 @@ import de.danoeh.antennapod.storage.database.FeedDatabaseWriter
 import de.danoeh.antennapod.storage.preferences.SynchronizationCredentials
 import de.danoeh.antennapod.storage.preferences.SynchronizationSettings
 import de.danoeh.antennapod.wear.R
+import de.danoeh.antennapod.wear.phone.PhoneCredentialSync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -109,6 +110,12 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
             _statusMessage.value = getApplication<Application>()
                 .getString(R.string.wear_open_on_phone_fallback, "https://gpodder.net/register/")
         }
+    }
+
+    fun fetchFromPhone() {
+        val ok = PhoneCredentialSync.request(getApplication())
+        _statusMessage.value = getApplication<Application>()
+            .getString(if (ok) R.string.wear_check_phone else R.string.wear_phone_unavailable)
     }
 
     fun login(onSuccess: () -> Unit) {
@@ -435,6 +442,37 @@ fun SyncLoginScreen(
                         enabled = username.isNotBlank() && password.isNotBlank(),
                         colors = ChipDefaults.chipColors(
                             backgroundColor = MaterialTheme.colors.primary
+                        )
+                    )
+                }
+
+                // Fetch from phone
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { syncLoginViewModel.fetchFromPhone() },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_fetch_from_phone),
+                                maxLines = 1
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = stringResource(R.string.wear_fetch_from_phone_hint),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
                         )
                     )
                 }
