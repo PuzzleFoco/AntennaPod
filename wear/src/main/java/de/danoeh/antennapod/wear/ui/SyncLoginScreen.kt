@@ -113,9 +113,11 @@ class SyncLoginViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun fetchFromPhone() {
-        val ok = PhoneCredentialSync.request(getApplication())
-        _statusMessage.value = getApplication<Application>()
-            .getString(if (ok) R.string.wear_check_phone else R.string.wear_phone_unavailable)
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.IO) { PhoneCredentialSync.request(getApplication()) }
+            _statusMessage.value = getApplication<Application>()
+                .getString(if (ok) R.string.wear_check_phone else R.string.wear_phone_unavailable)
+        }
     }
 
     fun login(onSuccess: () -> Unit) {

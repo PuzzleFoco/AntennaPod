@@ -48,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val _syncProvider = MutableStateFlow<String?>(null)
@@ -86,12 +87,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun fetchFromPhone() {
-        val ok = PhoneCredentialSync.request(getApplication())
-        Toast.makeText(
-            getApplication(),
-            if (ok) R.string.wear_check_phone else R.string.wear_phone_unavailable,
-            Toast.LENGTH_SHORT
-        ).show()
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                PhoneCredentialSync.request(getApplication())
+            }
+            Toast.makeText(
+                getApplication(),
+                if (ok) R.string.wear_check_phone else R.string.wear_phone_unavailable,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     fun logout() {
