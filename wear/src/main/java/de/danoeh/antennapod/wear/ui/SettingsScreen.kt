@@ -43,6 +43,7 @@ import de.danoeh.antennapod.net.sync.serviceinterface.SynchronizationQueue
 import de.danoeh.antennapod.storage.preferences.SynchronizationCredentials
 import de.danoeh.antennapod.storage.preferences.SynchronizationSettings
 import de.danoeh.antennapod.wear.R
+import de.danoeh.antennapod.wear.phone.PhoneCredentialSync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,6 +83,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _isSyncing.value = false
             }
         }
+    }
+
+    fun fetchFromPhone() {
+        val ok = PhoneCredentialSync.request(getApplication())
+        Toast.makeText(
+            getApplication(),
+            if (ok) R.string.wear_check_phone else R.string.wear_phone_unavailable,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     fun logout() {
@@ -177,6 +187,37 @@ fun SettingsScreen(
                         icon = {
                             Icon(
                                 painter = painterResource(R.drawable.ic_sync),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
+                        )
+                    )
+                }
+
+                // Fetch from phone
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { settingsViewModel.fetchFromPhone() },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_fetch_from_phone),
+                                maxLines = 1
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = stringResource(R.string.wear_fetch_from_phone_hint),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -292,6 +333,37 @@ fun SettingsScreen(
                     )
                 }
             }
+
+                // Fetch from phone (not connected)
+                item {
+                    Chip(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { settingsViewModel.fetchFromPhone() },
+                        label = {
+                            Text(
+                                text = stringResource(R.string.wear_fetch_from_phone),
+                                maxLines = 1
+                            )
+                        },
+                        secondaryLabel = {
+                            Text(
+                                text = stringResource(R.string.wear_fetch_from_phone_hint),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_phone),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        },
+                        colors = ChipDefaults.chipColors(
+                            backgroundColor = MaterialTheme.colors.surface
+                        )
+                    )
+                }
 
             // About section
             item {
