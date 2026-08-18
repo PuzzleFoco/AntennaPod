@@ -127,6 +127,14 @@ fun DownloadsScreen(
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
+    val scrollFocusModifier = Modifier
+        .fillMaxSize()
+        .onRotaryScrollEvent {
+            coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+            true
+        }
+        .focusRequester(focusRequester)
+        .focusable()
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -139,7 +147,7 @@ fun DownloadsScreen(
     ) {
         if (isLoading) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = scrollFocusModifier,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -147,7 +155,7 @@ fun DownloadsScreen(
             }
         } else if (episodes.isEmpty()) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = scrollFocusModifier,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -160,14 +168,7 @@ fun DownloadsScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onRotaryScrollEvent {
-                        coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
-                        true
-                    }
-                    .focusRequester(focusRequester)
-                    .focusable(),
+                modifier = scrollFocusModifier,
                 state = listState
             ) {
                 item {

@@ -92,6 +92,14 @@ fun SubscriptionsScreen(
     val listState = rememberScalingLazyListState()
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
+    val scrollFocusModifier = Modifier
+        .fillMaxSize()
+        .onRotaryScrollEvent {
+            coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+            true
+        }
+        .focusRequester(focusRequester)
+        .focusable()
 
     // Reload feeds every time this screen becomes visible
     LaunchedEffect(Unit) {
@@ -114,7 +122,7 @@ fun SubscriptionsScreen(
     ) {
         if (isLoading) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+        modifier = scrollFocusModifier,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -127,7 +135,7 @@ fun SubscriptionsScreen(
             }
         } else if (feeds.isEmpty()) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+        modifier = scrollFocusModifier,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -149,14 +157,7 @@ fun SubscriptionsScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onRotaryScrollEvent {
-                        coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
-                        true
-                    }
-                    .focusRequester(focusRequester)
-                    .focusable(),
+                modifier = scrollFocusModifier,
                 state = listState
             ) {
                 item {

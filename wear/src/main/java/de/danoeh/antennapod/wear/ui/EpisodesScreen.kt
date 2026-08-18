@@ -149,6 +149,14 @@ fun EpisodesScreen(
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
+    val scrollFocusModifier = Modifier
+        .fillMaxSize()
+        .onRotaryScrollEvent {
+            coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
+            true
+        }
+        .focusRequester(focusRequester)
+        .focusable()
 
     androidx.compose.runtime.LaunchedEffect(feedId) {
         episodesViewModel.loadEpisodes(feedId)
@@ -165,7 +173,7 @@ fun EpisodesScreen(
     ) {
         if (isLoading) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = scrollFocusModifier,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -173,7 +181,7 @@ fun EpisodesScreen(
             }
         } else if (episodes.isEmpty()) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = scrollFocusModifier,
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -185,14 +193,7 @@ fun EpisodesScreen(
             }
         } else {
             ScalingLazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onRotaryScrollEvent {
-                        coroutineScope.launch { listState.scroll { scrollBy(it.verticalScrollPixels) } }
-                        true
-                    }
-                    .focusRequester(focusRequester)
-                    .focusable(),
+                modifier = scrollFocusModifier,
                 state = listState
             ) {
                 item {
